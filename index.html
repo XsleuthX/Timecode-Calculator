@@ -1,122 +1,291 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Timecode Calculator — Paste & Parse (v4 – Unicode-safe)</title>
+<title>Timecode Table Calculator (v9)</title>
 <style>
   :root{
     --bg:#0e1116; --panel:#141922; --text:#e9f0ff; --muted:#96a0b5;
     --accent:#7aa2ff; --good:#39d98a; --warn:#ffb155; --bad:#ff6b6b; --border:#253043;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
   header{padding:18px 20px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#0f131a,#0b0e13)}
   h1{margin:0;font-size:18px;letter-spacing:.3px}
-  main{padding:16px;max-width:1100px;margin:0 auto}
-  .row{display:grid;grid-template-columns: 1fr; gap:12px; margin-bottom:12px}
-  @media (min-width: 900px){ .row{grid-template-columns: 1.2fr .8fr} }
+  main{padding:16px;max-width:1250px;margin:0 auto}
+  .row{display:grid;grid-template-columns:1fr;gap:12px}
+  @media (min-width: 1100px){ .row{grid-template-columns: 1.15fr .85fr;} }
   .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
-  textarea{width:100%;min-height:260px;background:#0b0f16;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:12px;resize:vertical;outline:none}
-  .btn{display:inline-flex;gap:8px;align-items:center;justify-content:center;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:#0f1520;color:var(--text);cursor:pointer}
+  .btn{
+    display:inline-flex;gap:8px;align-items:center;justify-content:center;
+    padding:10px 14px;border-radius:10px;border:1px solid var(--border);
+    background:#0f1520;color:var(--text);cursor:pointer;user-select:none
+  }
   .btn.primary{background:linear-gradient(180deg,#233250,#1a2740);border-color:#2b3b5b}
+  .btn:hover{border-color:#34425c}
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .hint{color:var(--muted);font-size:12px}
+  .err{color:var(--bad);font-size:12px}
+  .kpi{display:grid;grid-template-columns: repeat(3, minmax(0,1fr)); gap:10px; margin-top:10px}
+  .tile{background:#0b0f16;border:1px solid var(--border);border-radius:10px;padding:10px}
+  .tile h3{margin:0 0 4px 0;font-size:12px;color:var(--muted);font-weight:500}
+  .tile .val{font-size:18px;font-variant-numeric: tabular-nums}
+  select{
+    width:100%;background:#0b0f16;border:1px solid var(--border);color:var(--text);
+    border-radius:8px;padding:8px 10px;outline:none;
+  }
+  label{display:block;color:var(--muted);font-size:12px;margin-bottom:6px}
+  .grid2{display:grid;grid-template-columns: repeat(2, minmax(0,1fr)); gap:10px}
   table{width:100%;border-collapse:collapse;font-variant-numeric: tabular-nums}
   th,td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
   th{color:#b9c6e1;text-align:left;position:sticky;top:0;background:var(--panel);z-index:1}
   tbody tr:hover{background:#0f1520}
-  .right{text-align:right}.nowrap{white-space:nowrap}.small{font-size:12px}
-  .kpi{display:grid;grid-template-columns: repeat(3, minmax(0,1fr)); gap:10px; margin-top:10px}
-  .tile{background:#0b0f16;border:1px solid var(--border);border-radius:10px;padding:10px}
-  .tile h3{margin:0 0 4px 0;font-size:12px;color:var(--muted);font-weight:500}
-  .tile .val{font-size:18px}
-  .err{ color:var(--bad) }
-  .hint{color:var(--muted);font-size:12px}
+  .right{text-align:right}
+  .nowrap{white-space:nowrap}
+  .multiline{white-space:pre-line}
+  .split{display:grid;grid-template-columns: 1fr; gap:12px; margin-top:12px}
+  @media (min-width: 1100px){ .split{grid-template-columns: 1fr 1fr;} }
+
+  /* Resizable input wrapper */
+  .resizeWrap{
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:#0b0f16;
+    padding:0;
+    resize: both;              /* resizable */
+    overflow: auto;            /* scrollbar */
+    min-height: 320px;
+    max-height: 70vh;
+  }
+
+  /* ContentEditable paste area */
+  .pasteBox{
+    min-height: 320px;
+    padding:12px;
+    outline:none;
+    overflow:auto;
+    color: var(--text);
+  }
+
+  /* Force pasted Google Docs styles to be readable */
+  .pasteBox, .pasteBox *{
+    color: var(--text) !important;
+    background: transparent !important;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+  .pasteBox:empty:before{
+    content: attr(data-placeholder);
+    color:#6b778d !important;
+  }
+  .pasteBox table{
+    width:100%;
+    border-collapse:collapse;
+    margin:6px 0;
+  }
+  .pasteBox td, .pasteBox th{
+    border:1px solid #2a3447 !important;
+    padding:6px 8px;
+    vertical-align:top;
+    background:#0b0f16 !important;
+  }
+  .pill{display:inline-block;padding:2px 8px;border:1px solid var(--border);border-radius:999px;color:#c9d6f5;font-size:12px}
 </style>
 </head>
 <body>
-<header><h1>Timecode Calculator — paste from Google Doc</h1></header>
+<header>
+  <h1>Timecode Table Calculator — paste Google Docs tables (v9)</h1>
+</header>
+
 <main>
   <div class="row">
     <div class="card">
-      <label for="input" class="small">Paste your script (with timecodes) here</label>
-      <textarea id="input" placeholder="e.g.
-00:08:02:05 – 00:08:04:24
-00:08:04:24 - 00:08:07:23"></textarea>
-      <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;align-items:center">
-        <button class="btn primary" id="btnParse">Calculate</button>
-        <button class="btn" id="btnSample">Load sample</button>
+      <label>Input (scrollable + resizable)</label>
+
+      <div class="resizeWrap" id="inputWrap">
+        <div id="input" class="pasteBox" contenteditable="true"
+             data-placeholder="Paste here (Ctrl+V). Keep the table formatting — do NOT paste as plain text.
+You can resize this box from the bottom-right corner."></div>
+      </div>
+
+      <div class="toolbar" style="margin-top:10px">
+        <button class="btn primary" id="btnAnalyze">Analyze</button>
+        <button class="btn" id="btnSample">Load sample table</button>
         <button class="btn" id="btnClear">Clear</button>
         <span id="debug" class="hint"></span>
       </div>
+
+      <div class="hint" style="margin-top:8px">
+        Tip: If your pasted table is huge, scroll inside the box, or resize it bigger.
+      </div>
     </div>
+
     <div class="card">
-      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
+      <label>Settings</label>
+      <div class="grid2">
         <div>
-          <label for="fps" class="small">Frame rate (for HH:MM:SS:FF)</label>
+          <label for="fps">FPS (for HH:MM:SS:FF)</label>
           <select id="fps">
-            <option value="23.976">23.976</option><option value="24">24</option>
-            <option value="25" selected>25</option><option value="29.97">29.97</option>
-            <option value="30">30</option><option value="50">50</option>
-            <option value="59.94">59.94</option><option value="60">60</option>
+            <option value="23.976">23.976</option>
+            <option value="24">24</option>
+            <option value="25" selected>25</option>
+            <option value="29.97">29.97</option>
+            <option value="30">30</option>
+            <option value="50">50</option>
+            <option value="59.94">59.94</option>
+            <option value="60">60</option>
           </select>
         </div>
         <div>
-          <label for="pairing" class="small">Pairing mode</label>
+          <label for="pairing">Timecode pairing inside each cell</label>
           <select id="pairing">
-            <option value="line" selected>Pair within each line</option>
-            <option value="global">Pair consecutively (global)</option>
+            <option value="line" selected>Per-line (recommended)</option>
+            <option value="global">Global consecutive within cell</option>
+            <option value="hybrid">Hybrid (per-line, fallback to global)</option>
           </select>
         </div>
       </div>
+
       <div class="kpi">
-        <div class="tile"><h3>Total clips</h3><div class="val" id="kClips">0</div></div>
+        <div class="tile"><h3>Total units</h3><div class="val" id="kUnits">0</div></div>
         <div class="tile"><h3>Total duration</h3><div class="val" id="kDur">00:00:00.000</div></div>
         <div class="tile"><h3>Total frames (@<span id="kFps">25</span> fps)</h3><div class="val" id="kFrames">0</div></div>
       </div>
-      <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">
-        <button class="btn" id="btnCSV">Export Table as CSV</button>
-        <button class="btn" id="btnCopy">Copy Summary</button>
+
+      <div class="toolbar" style="margin-top:10px">
+        <button class="btn" id="btnCSV">Export CSV</button>
+        <button class="btn" id="btnCopy">Copy summary</button>
+      </div>
+
+      <div id="errors" class="err" style="margin-top:10px"></div>
+
+      <div class="hint" style="margin-top:10px">
+        Supported timecodes: <span class="pill">HH:MM:SS:FF</span>
+        <span class="pill">HH:MM:SS</span>
+        <span class="pill">MM:SS</span>
+        <span class="pill">(+ .mmm supported)</span>
       </div>
     </div>
   </div>
 
-  <div class="card">
-    <table id="results">
-      <thead><tr><th>#</th><th>Context</th><th>In</th><th>Out</th><th>Duration</th><th class="right">Frames</th><th class="right">Line</th></tr></thead>
-      <tbody></tbody>
-    </table>
-    <div id="errors" class="small err" style="margin-top:8px"></div>
+  <div class="split">
+    <div class="card">
+      <h3 style="margin:0 0 10px 0;color:#b9c6e1;font-size:13px">Units (each pasted cell)</h3>
+      <table id="unitsTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Unit name (filename)</th>
+            <th>Timecode In</th>
+            <th>Timecode Out</th>
+            <th class="right">Pairs</th>
+            <th>Duration</th>
+            <th class="right">Frames</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="hint" style="margin-top:8px">
+        If a unit has multiple pairs, the In/Out columns show them line-by-line.
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0 0 10px 0;color:#b9c6e1;font-size:13px">Totals by filename</h3>
+      <table id="filesTable">
+        <thead>
+          <tr>
+            <th>Filename</th>
+            <th class="right">Pairs</th>
+            <th class="right">Frames</th>
+            <th>Duration</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 </main>
 
 <script>
-(function(){
-  // Regex literal for ASCII digits/colons (works after normalization)
-  const RE = /\b(\d{1,2}):([0-5]\d):([0-5]\d)(?:([:.])(\d{1,3}))?\b/g; // escaped in HTML string
-
+(() => {
   const el = {
     input: document.getElementById('input'),
     fps: document.getElementById('fps'),
     pairing: document.getElementById('pairing'),
-    btnParse: document.getElementById('btnParse'),
+    btnAnalyze: document.getElementById('btnAnalyze'),
     btnSample: document.getElementById('btnSample'),
     btnClear: document.getElementById('btnClear'),
     btnCSV: document.getElementById('btnCSV'),
     btnCopy: document.getElementById('btnCopy'),
-    kClips: document.getElementById('kClips'),
+    debug: document.getElementById('debug'),
+    errors: document.getElementById('errors'),
+    kUnits: document.getElementById('kUnits'),
     kDur: document.getElementById('kDur'),
     kFrames: document.getElementById('kFrames'),
     kFps: document.getElementById('kFps'),
-    tableBody: document.querySelector('#results tbody'),
-    errors: document.getElementById('errors'),
-    debug: document.getElementById('debug'),
+    unitsBody: document.querySelector('#unitsTable tbody'),
+    filesBody: document.querySelector('#filesTable tbody'),
   };
 
-  function clean(text){
-    // Normalize full-width digits/colons etc. and strip zero-width chars
-    return (text || '')
+  function cleanText(s){
+    return (s || '')
       .replace(/[\u200B\u200C\u200D\uFEFF]/g,'')
       .normalize('NFKC');
+  }
+
+  // Timecodes:
+  const HMS_RE = /\b(\d{1,2}):([0-5]\d):([0-5]\d)(?:([:.])(\d{1,3}))?\b/g;  // HH:MM:SS(.mmm or :FF)
+  const MS_RE  = /\b([0-5]?\d):([0-5]\d)(?:\.(\d{1,3}))?\b/g;              // MM:SS(.mmm)
+
+  function tcToMs_HMS(match){
+    const [full, h, m, s, sep, sub] = match;
+    const HH = parseInt(h,10), MM = parseInt(m,10), SS = parseInt(s,10);
+    let ms = (HH*3600 + MM*60 + SS) * 1000;
+    if (sep === '.'){
+      const fract = String(sub||'').padEnd(3,'0').slice(0,3);
+      ms += parseInt(fract,10);
+    } else if (sep === ':'){
+      const fps = parseFloat(el.fps.value);
+      const FF = parseInt(sub||'0',10);
+      ms += Math.round(1000 * (FF / fps));
+    }
+    return { text: full, ms };
+  }
+  function tcToMs_MS(match){
+    const [full, mm, ss, mmm] = match;
+    const MM = parseInt(mm,10), SS = parseInt(ss,10);
+    let ms = (MM*60 + SS) * 1000;
+    if (mmm != null){
+      const fract = String(mmm||'').padEnd(3,'0').slice(0,3);
+      ms += parseInt(fract,10);
+    }
+    return { text: full, ms };
+  }
+
+  function findTimecodes(text){
+    const t = cleanText(text);
+    const candidates = [];
+    const occupied = [];
+
+    let m;
+    HMS_RE.lastIndex = 0;
+    while ((m = HMS_RE.exec(t))){
+      candidates.push({ idx: m.index, tc: tcToMs_HMS(m) });
+      occupied.push([m.index, m.index + m[0].length]);
+    }
+
+    MS_RE.lastIndex = 0;
+    while ((m = MS_RE.exec(t))){
+      const start = m.index, end = m.index + m[0].length;
+      const overlaps = occupied.some(([a,b]) => start < b && end > a);
+      if (!overlaps){
+        candidates.push({ idx: m.index, tc: tcToMs_MS(m) });
+      }
+    }
+
+    candidates.sort((a,b)=> a.idx - b.idx);
+    return candidates.map(x => x.tc);
   }
 
   function msToHMS(ms){
@@ -128,176 +297,290 @@
     const msr = Math.floor(ms % 1000);
     return sign + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0') + '.' + String(msr).padStart(3,'0');
   }
-
-  function parseTC(match){
-    const [full, h, m, s, sep, sub] = match;
-    const HH = parseInt(h,10), MM = parseInt(m,10), SS = parseInt(s,10);
-    let ms = (HH*3600 + MM*60 + SS)*1000;
-    if (sep === '.'){
-      let fract = String(sub||'').padEnd(3,'0').slice(0,3);
-      ms += parseInt(fract,10);
-    } else if (sep === ':'){
-      const fps = parseFloat(el.fps.value);
-      const FF = parseInt(sub||'0',10);
-      const frameMs = Math.round(1000*(FF/fps));
-      ms += frameMs;
-    }
-    return { text: full, ms, sep, sub };
-  }
-
-  function findTimecodesInLine(line){
-    const result = [];
-    let m;
-    RE.lastIndex = 0;
-    while ((m = RE.exec(line))){
-      result.push(parseTC(m));
-    }
-    return result;
-  }
-
-  function summarize(text, maxLen=80){
-    if (!text) return '';
-    const t = text.replace(/\s+/g,' ').trim();
-    return t.length > maxLen ? t.slice(0,maxLen-1)+'…' : t;
-  }
-
-  function pairTimecodes(lines, mode){
-    const pairs = [];
-    const issues = [];
-    if (mode === 'line'){
-      lines.forEach((line, idx)=>{
-        const tcs = findTimecodesInLine(line);
-        if (tcs.length === 1){
-          issues.push(`Line ${idx+1}: only one timecode found; skipped.`);
-        }
-        for (let i=0;i<tcs.length-1;i+=2){
-          const a = tcs[i], b = tcs[i+1];
-          pairs.push({ in:a, out:b, line: idx+1, context: line });
-        }
-      });
-    } else {
-      const all = [];
-      lines.forEach((line, idx)=>{
-        findTimecodesInLine(line).forEach(tc=> all.push({tc, idx, line}));
-      });
-      if (all.length % 2 === 1){
-        issues.push(`Odd number of timecodes (${all.length}) found; the last one is dropped.`);
-      }
-      for (let i=0;i<all.length-1;i+=2){
-        const a = all[i], b = all[i+1];
-        pairs.push({ in:a.tc, out:b.tc, line: b.idx+1, context: b.line });
-      }
-    }
-    return { pairs, issues };
-  }
-
-  function durationFrames(ms){
+  function msToFrames(ms){
     const fps = parseFloat(el.fps.value);
     return Math.round(ms * fps / 1000);
   }
 
-  function compute(){
-    let raw = el.input.value || '';
-    const text = clean(raw);
-    // Count matches on normalized text
-    let count=0; RE.lastIndex=0; while(RE.exec(text)) count++;
-    el.debug.textContent = `Found ${count} timecodes`;
-    const lines = text.split(/\r?\n/);
+  // Filenames
+  const ANY_FILENAME_RE = /\b([A-Za-z0-9][A-Za-z0-9._-]*\.[A-Za-z0-9]{2,6})\b/g;
+  const PREFERRED_EXTS = new Set(['mp4','mov','mxf','mkv','avi','mpg','mpeg','m4v','flv','webm','wmv','mts','m2ts','ts','r3d','braw','ari','arx','dpx','cin','cine','hevc','h264','h265']);
+  function findFilenames(text){
+    const t = cleanText(text);
+    const found = [];
+    let m;
+    ANY_FILENAME_RE.lastIndex = 0;
+    while ((m = ANY_FILENAME_RE.exec(t))){
+      const fn = m[1];
+      const ext = fn.split('.').pop().toLowerCase();
+      found.push({fn, ext});
+    }
+    return found;
+  }
+  function choosePrimaryFilename(list){
+    if (!list || list.length === 0) return '';
+    const preferred = list.find(x => PREFERRED_EXTS.has(x.ext));
+    return (preferred ? preferred.fn : list[0].fn);
+  }
 
-    const { pairs, issues } = pairTimecodes(lines, el.pairing.value);
+  function pairsFromTimecodes(tcs){
+    const pairs = [];
+    for (let i=0;i<tcs.length-1;i+=2){
+      pairs.push({in:tcs[i], out:tcs[i+1], durMs: tcs[i+1].ms - tcs[i].ms});
+    }
+    return pairs;
+  }
 
-    el.tableBody.innerHTML = '';
-    el.errors.textContent = issues.join(' ');
+  function parseCellByLines(cellText){
+    const lines = cleanText(cellText).split(/\r?\n/).map(l => l.trim()).filter(l => l.length>0);
+    let currentFile = '';
+    const perFilePairs = new Map();
+
+    for (const line of lines){
+      const fns = findFilenames(line);
+      if (fns.length) currentFile = choosePrimaryFilename(fns) || currentFile;
+
+      const tcs = findTimecodes(line);
+      if (tcs.length >= 2){
+        const pairs = pairsFromTimecodes(tcs);
+        const key = currentFile || '(unlabeled)';
+        const arr = perFilePairs.get(key) || [];
+        arr.push(...pairs);
+        perFilePairs.set(key, arr);
+      }
+    }
+
+    let totalPairs = 0;
+    for (const pairs of perFilePairs.values()) totalPairs += pairs.length;
+    return { perFilePairs, totalPairs };
+  }
+
+  function parseCellGlobal(cellText){
+    const txt = cleanText(cellText);
+    const primary = choosePrimaryFilename(findFilenames(txt)) || '';
+    const tcs = findTimecodes(txt);
+    const pairs = pairsFromTimecodes(tcs);
+    const perFilePairs = new Map();
+    perFilePairs.set(primary || '(unlabeled)', pairs);
+    return { perFilePairs, totalPairs: pairs.length };
+  }
+
+  function parseCell(cellText){
+    const mode = el.pairing.value;
+    const byLine = parseCellByLines(cellText);
+    const byGlobal = parseCellGlobal(cellText);
+    if (mode === 'line') return byLine;
+    if (mode === 'global') return byGlobal;
+    return (byLine.totalPairs > 0) ? byLine : byGlobal;
+  }
+
+  function getAllCells(root){
+    const cells = [];
+    const tables = root.querySelectorAll('table');
+    if (tables.length){
+      tables.forEach((tbl) => {
+        const rows = tbl.querySelectorAll('tr');
+        rows.forEach((tr) => {
+          const tds = tr.querySelectorAll('th,td');
+          tds.forEach((td) => cells.push({ text: td.innerText || '' }));
+        });
+      });
+    } else {
+      const text = root.innerText || '';
+      const lines = cleanText(text).split(/\r?\n/).filter(l => l.trim().length>0);
+      lines.forEach((l) => cells.push({ text: l }));
+    }
+    return cells;
+  }
+
+  function analyze(){
+    el.errors.textContent = '';
+    el.unitsBody.innerHTML = '';
+    el.filesBody.innerHTML = '';
+
     el.kFps.textContent = el.fps.value;
+
+    const cells = getAllCells(el.input);
+    const units = [];
+    const fileTotals = new Map();
 
     let totalMs = 0;
     let totalFrames = 0;
-    let clipIdx = 0;
-    const rowsForCsv = [];
 
-    for (const p of pairs){
-      const dur = p.out.ms - p.in.ms;
-      clipIdx++;
-      const preferFramesIn = (p.in.sep === ':');
-      const preferFramesOut = (p.out.sep === ':');
+    for (const c of cells){
+      const cellText = c.text || '';
+      const { perFilePairs, totalPairs } = parseCell(cellText);
+      if (totalPairs === 0) continue;
 
-      const tr = document.createElement('tr');
-      const ctx = summarize(p.context);
+      const primaryName = choosePrimaryFilename(findFilenames(cellText)) || '(unlabeled)';
 
-      const cells = [
-        String(clipIdx),
-        ctx || '',
-        preferFramesIn ? p.in.text : msToHMS(p.in.ms),
-        preferFramesOut ? p.out.text : msToHMS(p.out.ms),
-        msToHMS(dur),
-        String(durationFrames(dur)),
-        String(p.line)
-      ];
-      cells.forEach((c, i)=>{
-        const td = document.createElement('td');
-        td.textContent = c;
-        if (i===5 || i===6) td.className = 'right nowrap';
-        tr.appendChild(td);
-      });
-      if (dur <= 0) tr.style.color = 'var(--warn)';
-      el.tableBody.appendChild(tr);
+      let unitMs = 0;
+      let unitPairsCount = 0;
 
-      if (dur > 0){
-        totalMs += dur;
-        totalFrames += durationFrames(dur);
+      const inTexts = [];
+      const outTexts = [];
+
+      for (const [fname, pairs] of perFilePairs.entries()){
+        for (const p of pairs){
+          unitPairsCount += 1;
+          inTexts.push(p.in.text);
+          outTexts.push(p.out.text);
+
+          if (p.durMs <= 0) continue;
+          unitMs += p.durMs;
+
+          const key = (fname && fname !== '(unlabeled)') ? fname : primaryName;
+          const t = fileTotals.get(key) || {pairs:0, ms:0, frames:0};
+          t.pairs += 1;
+          t.ms += p.durMs;
+          t.frames += msToFrames(p.durMs);
+          fileTotals.set(key, t);
+        }
       }
-      rowsForCsv.push(cells);
+
+      const unitFrames = msToFrames(unitMs);
+      totalMs += unitMs;
+      totalFrames += unitFrames;
+
+      units.push({
+        name: primaryName,
+        inList: inTexts.join('\n'),
+        outList: outTexts.join('\n'),
+        pairs: unitPairsCount,
+        ms: unitMs,
+        frames: unitFrames
+      });
     }
 
-    el.kClips.textContent = String(pairs.length);
+    el.kUnits.textContent = String(units.length);
     el.kDur.textContent = msToHMS(totalMs);
     el.kFrames.textContent = String(totalFrames);
 
+    const rawText = cleanText(el.input.innerText || '');
+    const tcCount = (() => {
+      const TOK_RE = /\b(\d{1,2}:[0-5]\d:[0-5]\d(?:[.:]\d{1,3})?|\d{1,2}:[0-5]\d(?:\.\d{1,3})?)\b/g;
+      let n=0; TOK_RE.lastIndex=0; while(TOK_RE.exec(rawText)) n++; return n;
+    })();
+    el.debug.textContent = `Cells: ${cells.length} • Timecodes found: ${tcCount} • Units parsed: ${units.length}`;
+
+    units.forEach((u, i) => {
+      const tr = document.createElement('tr');
+      const cols = [String(i+1), u.name, u.inList, u.outList, String(u.pairs), msToHMS(u.ms), String(u.frames)];
+      cols.forEach((v, idx) => {
+        const td = document.createElement('td');
+        td.textContent = v;
+        if (idx === 2 || idx === 3) td.className = 'multiline';
+        if (idx === 4 || idx === 6) td.className = 'right nowrap';
+        if (idx === 5) td.className = 'nowrap';
+        tr.appendChild(td);
+      });
+      el.unitsBody.appendChild(tr);
+    });
+
+    const filesSorted = Array.from(fileTotals.entries()).sort((a,b)=> b[1].ms - a[1].ms);
+    filesSorted.forEach(([name, t]) => {
+      const tr = document.createElement('tr');
+      const cols = [name, String(t.pairs), String(t.frames), msToHMS(t.ms)];
+      cols.forEach((v, idx) => {
+        const td = document.createElement('td');
+        td.textContent = v;
+        if (idx === 1 || idx === 2) td.className = 'right nowrap';
+        if (idx === 3) td.className = 'nowrap';
+        tr.appendChild(td);
+      });
+      el.filesBody.appendChild(tr);
+    });
+
     el.btnCSV.onclick = () => {
-      const header = ['#','Context','In','Out','Duration','Frames','Line'];
-      const csv = [header].concat(rowsForCsv).map(r=>r.map(v=>{
+      const header = ['unit_index','unit_name','timecode_in','timecode_out','pairs','duration_hms','frames'];
+      const rows = units.map((u, i) => [i+1, u.name, u.inList, u.outList, u.pairs, msToHMS(u.ms), u.frames]);
+      const csv = [header].concat(rows).map(r => r.map(v => {
         const s = String(v ?? '');
         return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
       }).join(',')).join('\n');
+
       const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = 'timecode_durations.csv';
+      a.href = url;
+      a.download = 'timecode_units.csv';
       a.click();
       URL.revokeObjectURL(url);
     };
 
     el.btnCopy.onclick = () => {
-      const summary = `Clips: ${pairs.length}\nTotal: ${msToHMS(totalMs)}\nFrames(@${el.fps.value}): ${totalFrames}`;
-      navigator.clipboard.writeText(summary).then(()=>{
-        el.errors.textContent = 'Copied summary to clipboard.';
-        setTimeout(()=> el.errors.textContent = issues.join(' '), 1200);
+      const lines = [];
+      lines.push(`Total units: ${units.length}`);
+      lines.push(`Total duration: ${msToHMS(totalMs)}`);
+      lines.push(`Total frames (@${el.fps.value}): ${totalFrames}`);
+      lines.push('');
+      lines.push('By filename:');
+      filesSorted.forEach(([name, t]) => {
+        lines.push(`${name} — ${msToHMS(t.ms)} (${t.frames} fr, ${t.pairs} pairs)`);
+      });
+      navigator.clipboard.writeText(lines.join('\n')).then(()=>{
+        el.errors.textContent = 'Copied summary.';
+        setTimeout(()=> el.errors.textContent = '', 1200);
       }).catch(()=>{
         el.errors.textContent = 'Unable to access clipboard.';
       });
     };
   }
 
-  el.btnParse.addEventListener('click', compute);
-  el.fps.addEventListener('change', compute);
-  el.pairing.addEventListener('change', compute);
-  el.btnClear.addEventListener('click', ()=>{ el.input.value=''; el.tableBody.innerHTML=''; el.kClips.textContent='0'; el.kDur.textContent='00:00:00.000'; el.kFrames.textContent='0'; el.errors.textContent=''; el.debug.textContent=''; });
-  el.btnSample.addEventListener('click', ()=>{
-    el.input.value = `Interview 罗盖文 Annabel Law
-C0623.mp4
+  function loadSample(){
+    el.input.innerHTML = `
+      <table>
+        <tr><th>Clip unit</th><th>Notes</th></tr>
+        <tr>
+          <td>
+            C0623.mp4<br>
+            00:08:02:05 – 00:08:04:24<br>
+            00:08:04:24 - 00:08:07:23
+          </td>
+          <td>Interview A</td>
+        </tr>
+        <tr>
+          <td>
+            C0625.MXF<br>
+            00:08:12:19 - 00:08:23:14
+          </td>
+          <td>Wide angle</td>
+        </tr>
+        <tr>
+          <td>
+            Wide_B.mov<br>
+            08:30 - 08:34<br>
+            08:38 - 08:40
+          </td>
+          <td>MM:SS demo</td>
+        </tr>
+      </table>
+    `;
+    analyze();
+  }
 
-00:08:02:05 – 00:08:04:24
-00:08:04:24 - 00:08:07:23
+  function clearAll(){
+    el.input.innerHTML = '';
+    el.unitsBody.innerHTML = '';
+    el.filesBody.innerHTML = '';
+    el.kUnits.textContent = '0';
+    el.kDur.textContent = '00:00:00.000';
+    el.kFrames.textContent = '0';
+    el.debug.textContent = '';
+    el.errors.textContent = '';
+  }
 
-00:08:12:19 - 00:08:23:14
+  el.btnAnalyze.addEventListener('click', analyze);
+  el.btnSample.addEventListener('click', loadSample);
+  el.btnClear.addEventListener('click', clearAll);
+  el.fps.addEventListener('change', analyze);
+  el.pairing.addEventListener('change', analyze);
 
-
-00:08:30:03 – 00:08:34:09
-
-00:08:38:04 - 00:08:40:20`;
+  let t;
+  el.input.addEventListener('input', () => {
+    clearTimeout(t);
+    t = setTimeout(analyze, 150);
   });
-
-  el.input.addEventListener('paste', () => setTimeout(compute, 10));
 })();
 </script>
 </body>
