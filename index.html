@@ -1,586 +1,1799 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Timecode Table Calculator (v9)</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Timecode Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
-  :root{
-    --bg:#0e1116; --panel:#141922; --text:#e9f0ff; --muted:#96a0b5;
-    --accent:#7aa2ff; --good:#39d98a; --warn:#ffb155; --bad:#ff6b6b; --border:#253043;
+  :root {
+    --bg: #080a0d;
+    --surface: #0e1118;
+    --panel: #131820;
+    --border: #1e2535;
+    --border-hi: #2d3d58;
+    --text: #d8e4f5;
+    --muted: #6b7d99;
+    --accent: #3d8eff;
+    --accent-dim: #1a3d7a;
+    --green: #2de08a;
+    --orange: #f5a623;
+    --red: #ff5c5c;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
   }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
-  header{padding:18px 20px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#0f131a,#0b0e13)}
-  h1{margin:0;font-size:18px;letter-spacing:.3px}
-  main{padding:16px;max-width:1250px;margin:0 auto}
-  .row{display:grid;grid-template-columns:1fr;gap:12px}
-  @media (min-width: 1100px){ .row{grid-template-columns: 1.15fr .85fr;} }
-  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
-  .btn{
-    display:inline-flex;gap:8px;align-items:center;justify-content:center;
-    padding:10px 14px;border-radius:10px;border:1px solid var(--border);
-    background:#0f1520;color:var(--text);cursor:pointer;user-select:none
-  }
-  .btn.primary{background:linear-gradient(180deg,#233250,#1a2740);border-color:#2b3b5b}
-  .btn:hover{border-color:#34425c}
-  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-  .hint{color:var(--muted);font-size:12px}
-  .err{color:var(--bad);font-size:12px}
-  .kpi{display:grid;grid-template-columns: repeat(3, minmax(0,1fr)); gap:10px; margin-top:10px}
-  .tile{background:#0b0f16;border:1px solid var(--border);border-radius:10px;padding:10px}
-  .tile h3{margin:0 0 4px 0;font-size:12px;color:var(--muted);font-weight:500}
-  .tile .val{font-size:18px;font-variant-numeric: tabular-nums}
-  select{
-    width:100%;background:#0b0f16;border:1px solid var(--border);color:var(--text);
-    border-radius:8px;padding:8px 10px;outline:none;
-  }
-  label{display:block;color:var(--muted);font-size:12px;margin-bottom:6px}
-  .grid2{display:grid;grid-template-columns: repeat(2, minmax(0,1fr)); gap:10px}
-  table{width:100%;border-collapse:collapse;font-variant-numeric: tabular-nums}
-  th,td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
-  th{color:#b9c6e1;text-align:left;position:sticky;top:0;background:var(--panel);z-index:1}
-  tbody tr:hover{background:#0f1520}
-  .right{text-align:right}
-  .nowrap{white-space:nowrap}
-  .multiline{white-space:pre-line}
-  .split{display:grid;grid-template-columns: 1fr; gap:12px; margin-top:12px}
-  @media (min-width: 1100px){ .split{grid-template-columns: 1fr 1fr;} }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  /* Resizable input wrapper */
-  .resizeWrap{
-    border:1px solid var(--border);
-    border-radius:10px;
-    background:#0b0f16;
-    padding:0;
-    resize: both;              /* resizable */
-    overflow: auto;            /* scrollbar */
-    min-height: 320px;
-    max-height: 70vh;
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    min-height: 100vh;
+    overflow-x: hidden;
   }
 
-  /* ContentEditable paste area */
-  .pasteBox{
-    min-height: 320px;
-    padding:12px;
-    outline:none;
-    overflow:auto;
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-icon {
+    width: 28px; height: 28px;
+    background: var(--accent);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: -0.5px;
+    flex-shrink: 0;
+  }
+  .logo-text {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
     color: var(--text);
   }
+  .logo-ver {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+  .header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
 
-  /* Force pasted Google Docs styles to be readable */
-  .pasteBox, .pasteBox *{
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 7px;
+    border: 1px solid var(--border-hi);
+    background: var(--panel);
+    color: var(--text);
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover { border-color: #4d6585; background: #1a2030; }
+  .btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .btn.primary:hover { background: #5aa0ff; border-color: #5aa0ff; }
+  .btn.success {
+    background: transparent;
+    border-color: var(--green);
+    color: var(--green);
+  }
+  .btn.success:hover { background: rgba(45,224,138,0.1); }
+  .btn.danger { color: var(--red); border-color: #3a1e1e; }
+  .btn.danger:hover { background: rgba(255,92,92,0.08); border-color: var(--red); }
+  .btn svg { flex-shrink: 0; }
+
+  /* LAYOUT */
+  .workspace {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    height: calc(100vh - 53px);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-section:last-child { border-bottom: none; flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+  .section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  /* INPUT AREA */
+  .input-wrap {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    overflow: auto;
+    resize: vertical;
+    min-height: 160px;
+    max-height: 300px;
+  }
+  .paste-box {
+    min-height: 160px;
+    padding: 10px 12px;
+    outline: none;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+  .paste-box, .paste-box * {
     color: var(--text) !important;
     background: transparent !important;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-family: var(--mono) !important;
+    font-size: 11.5px !important;
   }
-  .pasteBox:empty:before{
+  .paste-box:empty::before {
     content: attr(data-placeholder);
-    color:#6b778d !important;
+    color: #3a4d68 !important;
+    pointer-events: none;
   }
-  .pasteBox table{
-    width:100%;
-    border-collapse:collapse;
-    margin:6px 0;
+  .paste-box table { width: 100%; border-collapse: collapse; margin: 4px 0; }
+  .paste-box td, .paste-box th {
+    border: 1px solid #1c2535 !important;
+    padding: 4px 6px;
+    vertical-align: top;
+    background: #0a0e16 !important;
   }
-  .pasteBox td, .pasteBox th{
-    border:1px solid #2a3447 !important;
-    padding:6px 8px;
-    vertical-align:top;
-    background:#0b0f16 !important;
+
+  /* SETTINGS */
+  .field { margin-bottom: 10px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 5px;
   }
-  .pill{display:inline-block;padding:2px 8px;border:1px solid var(--border);border-radius:999px;color:#c9d6f5;font-size:12px}
+  select, input[type="text"] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 6px 10px;
+    outline: none;
+    font-family: var(--sans);
+    font-size: 12px;
+    transition: border-color 0.15s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7d99'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; cursor: pointer; }
+  select:focus, input[type="text"]:focus { border-color: var(--accent); }
+
+  /* KPI STRIP */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .kpi-tile {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .kpi-tile .kv { font-family: var(--mono); font-size: 16px; font-weight: 600; color: var(--accent); }
+  .kpi-tile .kl { font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-top: 2px; }
+
+  /* STATUS BAR */
+  .statusbar {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    padding: 6px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+  }
+
+  /* MAIN PANEL */
+  .main-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  /* TAB BAR */
+  .tab-bar {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    padding: 0 16px;
+    flex-shrink: 0;
+  }
+  .tab {
+    padding: 11px 16px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-spacer { flex: 1; }
+  .export-group {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  /* TAB PANELS */
+  .tab-panels { flex: 1; overflow: hidden; position: relative; }
+  .tab-panel {
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+    display: none;
+    padding: 0;
+  }
+  .tab-panel.active { display: block; }
+
+  /* SHOT LIST TABLE */
+  .shot-list-wrap { padding: 0; }
+  .shot-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+  .shot-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .shot-table th {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 9px 12px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .shot-table td {
+    padding: 0;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .shot-table td.inner { padding: 9px 12px; }
+  .shot-table tbody tr { transition: background 0.1s; }
+  .shot-table tbody tr:hover { background: #0e1520; }
+  .shot-table tbody tr:hover .row-drag { opacity: 1; }
+
+  /* Row cells */
+  .cell-seq {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    width: 44px;
+    user-select: none;
+  }
+  .cell-handle {
+    width: 20px;
+    text-align: center;
+    cursor: grab;
+    color: #2a3a52;
+    font-size: 12px;
+    padding: 9px 6px;
+  }
+  .cell-handle:active { cursor: grabbing; }
+  .row-drag { opacity: 0; transition: opacity 0.15s; font-size: 14px; }
+
+  .cell-file {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    min-width: 160px;
+  }
+  .cell-file .filename { font-weight: 500; }
+  .cell-file .ext-badge {
+    display: inline-block;
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    margin-left: 4px;
+    vertical-align: middle;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+
+  .cell-tc {
+    font-family: var(--mono);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .tc-in { color: var(--green); }
+  .tc-out { color: var(--orange); }
+  .tc-sep { color: var(--muted); margin: 0 4px; }
+
+  .cell-dur {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .cell-frames {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+    text-align: right;
+  }
+  .cell-tl {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #4a6080;
+    white-space: nowrap;
+  }
+  .cell-notes {
+    min-width: 100px;
+    max-width: 200px;
+  }
+  .notes-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-family: var(--sans);
+    font-size: 12px;
+    outline: none;
+    padding: 9px 12px;
+    border-radius: 0;
+  }
+  .notes-input:focus { background: #0f1825; color: var(--text); }
+  .notes-input::placeholder { color: #2a3a52; }
+
+  /* Duration bar */
+  .dur-bar-wrap {
+    height: 3px;
+    background: var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .dur-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #6ab8ff);
+    transition: width 0.3s;
+  }
+
+  /* Empty state */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 12px;
+    color: var(--muted);
+    user-select: none;
+  }
+  .empty-icon { font-size: 40px; opacity: 0.3; }
+  .empty-title { font-size: 15px; font-weight: 500; color: #3a4d68; }
+  .empty-hint { font-size: 12px; color: #2d3e56; text-align: center; max-width: 280px; line-height: 1.6; }
+
+  /* FILES TABLE */
+  .files-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+  .files-table th {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 9px 16px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .files-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 12px;
+    vertical-align: middle;
+  }
+  .files-table tbody tr:hover { background: #0e1520; }
+  .file-usage-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 4px;
+    overflow: hidden;
+  }
+  .file-usage-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* VO Duration Guide */
+  .guide-bar {
+    padding: 12px 20px;
+    background: #0e0c1e;
+    border-bottom: 1px solid #2a1a4a;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    animation: slideDown 0.2s ease;
+  }
+  @keyframes slideDown { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+  .guide-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #7a5aaa;
+    white-space: nowrap;
+  }
+  .rate-select {
+    background: #140f28;
+    border: 1px solid #2a1a4a;
+    color: #b87fff;
+    border-radius: 5px;
+    padding: 4px 22px 4px 8px;
+    font-size: 11px;
+    font-family: var(--sans);
+    outline: none;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23b87fff'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 6px center;
+  }
+  .guide-divider { width: 1px; height: 18px; background: #2a1a4a; flex-shrink: 0; }
+  .btn-guide-ai {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 12px;
+    background: linear-gradient(135deg, #2a1060, #3d1a7a);
+    border: 1px solid #5a2aa0;
+    border-radius: 6px;
+    color: #c89aff;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn-guide-ai:hover { background: linear-gradient(135deg, #3a1880, #5a2aaa); border-color: #7a3acc; color: #e0b8ff; }
+
+  /* Estimate pill on each VO row */
+  .est-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    margin-top: 6px;
+    padding: 3px 8px;
+    background: #1a0f30;
+    border: 1px solid #3a1a60;
+    border-radius: 4px;
+    font-size: 10px;
+    font-family: var(--mono);
+    color: #9060d0;
+    white-space: nowrap;
+  }
+  .est-pill .est-val { color: #c89aff; font-weight: 600; }
+  .est-pill .est-src { color: #5a3a80; margin-left: 3px; }
+  .btn-use-est {
+    display: inline-flex; align-items: center;
+    padding: 2px 7px;
+    background: #2a1050;
+    border: 1px solid #5a2a90;
+    border-radius: 4px;
+    color: #b87fff;
+    font-size: 10px;
+    font-family: var(--sans);
+    cursor: pointer;
+    margin-left: 4px;
+    transition: background 0.12s;
+  }
+  .btn-use-est:hover { background: #3a1870; }
+  /* Struck / excluded rows */
+  .shot-table tbody tr.row-struck { opacity: 0.4; }
+  .shot-table tbody tr.row-struck:hover { background: #0a0e14 !important; }
+
+  /* VO rows */
+  --vo: #b87fff;
+  --vo-dim: #2a1a4a;
+  .row-vo { background: #0d0c18 !important; }
+  .row-vo:hover { background: #110f20 !important; }
+  .vo-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 9px; font-weight: 700; letter-spacing: 1px;
+    padding: 2px 6px; border-radius: 3px;
+    background: #2a1a4a; color: #b87fff;
+    border: 1px solid #3d2470;
+    vertical-align: middle; margin-left: 5px;
+  }
+  .vo-label { color: #b87fff !important; font-style: italic; }
+  .vo-dur-input {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: #12102a;
+    border: 1px solid #2a1a4a;
+    color: #b87fff;
+    border-radius: 5px;
+    padding: 3px 7px;
+    width: 110px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .vo-dur-input:focus { border-color: #b87fff; background: #1a1535; }
+  .vo-dur-input.invalid { border-color: var(--red); color: var(--red); }
+  .vo-dur-input::placeholder { color: #3d2a5a; }
+  .dur-bar-vo { background: linear-gradient(90deg, #7c3aed, #b87fff) !important; }
+
+  /* DRAG */
+  .dragging { opacity: 0.4; }
+  .drag-over { border-top: 2px solid var(--accent) !important; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #1e2d40; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #2a3d55; }
+
+  /* Errors */
+  .err-msg {
+    color: var(--red);
+    font-size: 11px;
+    margin-top: 6px;
+    min-height: 16px;
+    font-family: var(--mono);
+  }
+
+  /* Tooltip */
+  [data-tip] { position: relative; }
+  [data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a2535;
+    border: 1px solid var(--border-hi);
+    color: var(--text);
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 5px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  @media (max-width: 900px) {
+    .workspace { grid-template-columns: 1fr; grid-template-rows: auto 1fr; height: auto; }
+    .sidebar { border-right: none; border-bottom: 1px solid var(--border); height: auto; overflow: visible; }
+    .main-panel { height: 70vh; }
+  }
 </style>
 </head>
 <body>
+
 <header>
-  <h1>Timecode Table Calculator — paste Google Docs tables (v9)</h1>
+  <div class="logo">
+    <div class="logo-icon">TC</div>
+    <div>
+      <div class="logo-text">Timecode Calculator</div>
+      <div class="logo-ver">version 15</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn" id="btnSample">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="1" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M4 4h4M4 6h4M4 8h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      Load Sample
+    </button>
+    <button class="btn danger" id="btnClear">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      Clear
+    </button>
+  </div>
 </header>
 
-<main>
-  <div class="row">
-    <div class="card">
-      <label>Input (scrollable + resizable)</label>
-
-      <div class="resizeWrap" id="inputWrap">
-        <div id="input" class="pasteBox" contenteditable="true"
-             data-placeholder="Paste here (Ctrl+V). Keep the table formatting — do NOT paste as plain text.
-You can resize this box from the bottom-right corner."></div>
+<div class="workspace">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="section-label">Input — Paste Table or Text</div>
+      <div class="input-wrap" id="inputWrap">
+        <div id="input" class="paste-box" contenteditable="true"
+          data-placeholder="Paste your clip table here (Ctrl+V).&#10;Include filenames + timecode in/out.&#10;Auto-analyzes on paste."></div>
       </div>
+      <div class="err-msg" id="errMsg"></div>
+    </div>
 
-      <div class="toolbar" style="margin-top:10px">
-        <button class="btn primary" id="btnAnalyze">Analyze</button>
-        <button class="btn" id="btnSample">Load sample table</button>
-        <button class="btn" id="btnClear">Clear</button>
-        <span id="debug" class="hint"></span>
+    <div class="sidebar-section">
+      <div class="section-label">Settings</div>
+      <div class="field">
+        <label>Frame Rate</label>
+        <select id="fps">
+          <option value="23.976">23.976 fps</option>
+          <option value="24">24 fps</option>
+          <option value="25" selected>25 fps</option>
+          <option value="29.97">29.97 fps</option>
+          <option value="30">30 fps</option>
+          <option value="50">50 fps</option>
+          <option value="59.94">59.94 fps</option>
+          <option value="60">60 fps</option>
+        </select>
       </div>
-
-      <div class="hint" style="margin-top:8px">
-        Tip: If your pasted table is huge, scroll inside the box, or resize it bigger.
+      <div class="field">
+        <label>Timecode Pairing</label>
+        <select id="pairing">
+          <option value="line" selected>Per-line (recommended)</option>
+          <option value="global">Global (consecutive within cell)</option>
+          <option value="hybrid">Hybrid (per-line → fallback global)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Sequence Name</label>
+        <input id="seqName" type="text" value="Shot List Export" placeholder="Sequence name"/>
+      </div>
+      <div class="field">
+        <label>Sequence Start TC</label>
+        <input id="seqStartTc" type="text" value="00:00:00:00" placeholder="00:00:00:00"/>
       </div>
     </div>
 
-    <div class="card">
-      <label>Settings</label>
-      <div class="grid2">
-        <div>
-          <label for="fps">FPS (for HH:MM:SS:FF)</label>
-          <select id="fps">
-            <option value="23.976">23.976</option>
-            <option value="24">24</option>
-            <option value="25" selected>25</option>
-            <option value="29.97">29.97</option>
-            <option value="30">30</option>
-            <option value="50">50</option>
-            <option value="59.94">59.94</option>
-            <option value="60">60</option>
-          </select>
+    <div class="sidebar-section">
+      <div class="section-label">Summary</div>
+      <div class="kpi-strip" style="grid-template-columns:repeat(4,1fr)">
+        <div class="kpi-tile">
+          <div class="kv" id="kShots">0</div>
+          <div class="kl">Shots</div>
         </div>
-        <div>
-          <label for="pairing">Timecode pairing inside each cell</label>
-          <select id="pairing">
-            <option value="line" selected>Per-line (recommended)</option>
-            <option value="global">Global consecutive within cell</option>
-            <option value="hybrid">Hybrid (per-line, fallback to global)</option>
-          </select>
+        <div class="kpi-tile">
+          <div class="kv" id="kDur">—</div>
+          <div class="kl">Total Dur.</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kv" id="kFiles">0</div>
+          <div class="kl">Files</div>
+        </div>
+        <div class="kpi-tile" style="border-color:#2a1a4a">
+          <div class="kv" id="kVO" style="color:#b87fff">0</div>
+          <div class="kl" style="color:#5a3a8a">VO Lines</div>
         </div>
       </div>
+    </div>
 
-      <div class="kpi">
-        <div class="tile"><h3>Total units</h3><div class="val" id="kUnits">0</div></div>
-        <div class="tile"><h3>Total duration</h3><div class="val" id="kDur">00:00:00.000</div></div>
-        <div class="tile"><h3>Total frames (@<span id="kFps">25</span> fps)</h3><div class="val" id="kFrames">0</div></div>
+    <div class="statusbar" id="statusbar">Ready — paste content to begin</div>
+  </aside>
+
+  <!-- MAIN PANEL -->
+  <div class="main-panel">
+    <div class="tab-bar">
+      <div class="tab active" data-tab="shotlist">Shot List</div>
+      <div class="tab" data-tab="files">By File</div>
+      <div class="tab" data-tab="vo">Voice Over</div>
+      <div class="tab-spacer"></div>
+      <div class="export-group">
+        <button class="btn" id="btnMoveUp" data-tip="Move selected up" style="padding:6px 9px">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 9V3M3 6l3-3 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="btn" id="btnMoveDown" data-tip="Move selected down" style="padding:6px 9px">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 3v6M3 6l3 3 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="btn" id="btnCSV">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7 1H3a1 1 0 00-1 1v8a1 1 0 001 1h6a1 1 0 001-1V5L7 1z" stroke="currentColor" stroke-width="1.2"/><path d="M7 1v4h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          CSV
+        </button>
+        <button class="btn success" id="btnXML">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Export Marker XML
+        </button>
+      </div>
+    </div>
+
+    <div class="tab-panels">
+      <!-- SHOT LIST TAB -->
+      <div class="tab-panel active" id="panel-shotlist">
+        <div class="shot-list-wrap" id="shotListWrap">
+          <div class="empty-state" id="emptyState">
+            <div class="empty-icon">🎬</div>
+            <div class="empty-title">No shots yet</div>
+            <div class="empty-hint">Paste a table with filenames and timecodes on the left. Shots will appear here in sequence order.</div>
+          </div>
+          <table class="shot-table" id="shotTable" style="display:none">
+            <thead>
+              <tr>
+                <th style="width:20px;padding:9px 6px"></th>
+                <th style="width:44px;text-align:center">#</th>
+                <th>File</th>
+                <th>Timecode In → Out</th>
+                <th>Duration</th>
+                <th class="right" style="text-align:right">Frames</th>
+                <th>Timeline In</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody id="shotBody"></tbody>
+          </table>
+        </div>
       </div>
 
-      <div class="toolbar" style="margin-top:10px">
-        <button class="btn" id="btnCSV">Export CSV</button>
-        <button class="btn" id="btnCopy">Copy summary</button>
+      <!-- FILES TAB -->
+      <div class="tab-panel" id="panel-files">
+        <table class="files-table" id="filesTable">
+          <thead>
+            <tr>
+              <th>Filename</th>
+              <th>Shots</th>
+              <th>Total Duration</th>
+              <th>Total Frames</th>
+              <th style="width:140px">Usage</th>
+            </tr>
+          </thead>
+          <tbody id="filesBody"></tbody>
+        </table>
       </div>
 
-      <div id="errors" class="err" style="margin-top:10px"></div>
+      <!-- VO TAB -->
+      <div class="tab-panel" id="panel-vo">
+        <div style="padding:14px 20px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div>
+            <div style="font-size:11px;font-weight:600;color:#b87fff;letter-spacing:0.8px;margin-bottom:2px">VOICE OVER SEGMENTS</div>
+            <div style="font-size:11px;color:var(--muted)">Lines tagged VO/V.O. without timecodes. Set duration manually per segment.</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <button class="btn" id="btnGuideToggle" style="border-color:#2a1a4a;color:#b87fff;background:#140f28;font-size:11px;padding:6px 12px">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.2"/><path d="M6 4v2.5M6 8h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+              Duration Guide
+            </button>
+            <div style="display:flex;gap:14px;align-items:center">
+              <div style="text-align:center">
+                <div id="voCount" style="font-family:var(--mono);font-size:18px;font-weight:600;color:#b87fff">0</div>
+                <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted)">Segments</div>
+              </div>
+              <div style="text-align:center">
+                <div id="voDur" style="font-family:var(--mono);font-size:18px;font-weight:600;color:#b87fff">—</div>
+                <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted)">Total VO</div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-      <div class="hint" style="margin-top:10px">
-        Supported timecodes: <span class="pill">HH:MM:SS:FF</span>
-        <span class="pill">HH:MM:SS</span>
-        <span class="pill">MM:SS</span>
-        <span class="pill">(+ .mmm supported)</span>
+        <!-- Duration Guide Bar (hidden by default) -->
+        <div id="guideBar" class="guide-bar" style="display:none">
+          <span class="guide-label">🎙 Duration Guide</span>
+          <div class="guide-divider"></div>
+          <span class="guide-label" style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">Speaking rate:</span>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:10px;color:#7a5aaa;width:20px;font-family:var(--mono);font-weight:600">ZH</span>
+              <select class="rate-select" id="rateZh" title="Mandarin speaking rate">
+                <option value="3.8">Slow · 3.8 ch/s</option>
+                <option value="4.5" selected>Normal · 4.5 ch/s</option>
+                <option value="5.5">Fast · 5.5 ch/s</option>
+              </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:10px;color:#7a5aaa;width:20px;font-family:var(--mono);font-weight:600">EN</span>
+              <select class="rate-select" id="rateEn" title="English speaking rate">
+                <option value="2.0">Slow · 2.0 w/s</option>
+                <option value="2.5" selected>Normal · 2.5 w/s</option>
+                <option value="3.2">Fast · 3.2 w/s</option>
+              </select>
+            </div>
+          </div>
+          <div class="guide-divider"></div>
+          <button class="btn-guide-ai" id="btnEstimateAll">
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.2"/><path d="M6 3.5v2.5l1.5 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            Estimate All
+          </button>
+          <span style="font-size:10px;color:#4a3060;font-family:var(--mono)">+15% pacing buffer</span>
+        </div>
+        <table class="files-table" id="voTable">
+          <thead>
+            <tr>
+              <th style="width:44px;text-align:center">#</th>
+              <th>VO Label / Script Text</th>
+              <th>Duration <span style="font-weight:400;font-style:italic;color:#3d2a5a">(MM:SS or HH:MM:SS)</span></th>
+              <th>Frames</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="voBody"></tbody>
+        </table>
+        <div id="voEmptyState" style="display:none;padding:48px;text-align:center;color:#2d3e56">
+          <div style="font-size:32px;margin-bottom:10px;opacity:0.3">🎙️</div>
+          <div style="font-size:13px;color:#3a4d68;margin-bottom:6px">No VO segments detected</div>
+          <div style="font-size:11px;line-height:1.7">Label lines with <code style="background:#1a1535;color:#b87fff;padding:1px 5px;border-radius:3px">VO:</code>, <code style="background:#1a1535;color:#b87fff;padding:1px 5px;border-radius:3px">V.O.</code>, or <code style="background:#1a1535;color:#b87fff;padding:1px 5px;border-radius:3px">VO —</code> in your pasted table, without timecodes.</div>
+        </div>
       </div>
     </div>
   </div>
-
-  <div class="split">
-    <div class="card">
-      <h3 style="margin:0 0 10px 0;color:#b9c6e1;font-size:13px">Units (each pasted cell)</h3>
-      <table id="unitsTable">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Unit name (filename)</th>
-            <th>Timecode In</th>
-            <th>Timecode Out</th>
-            <th class="right">Pairs</th>
-            <th>Duration</th>
-            <th class="right">Frames</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <div class="hint" style="margin-top:8px">
-        If a unit has multiple pairs, the In/Out columns show them line-by-line.
-      </div>
-    </div>
-
-    <div class="card">
-      <h3 style="margin:0 0 10px 0;color:#b9c6e1;font-size:13px">Totals by filename</h3>
-      <table id="filesTable">
-        <thead>
-          <tr>
-            <th>Filename</th>
-            <th class="right">Pairs</th>
-            <th class="right">Frames</th>
-            <th>Duration</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-</main>
+</div>
 
 <script>
 (() => {
+  // ── Elements ────────────────────────────────────────────────────────────────
   const el = {
-    input: document.getElementById('input'),
-    fps: document.getElementById('fps'),
-    pairing: document.getElementById('pairing'),
-    btnAnalyze: document.getElementById('btnAnalyze'),
-    btnSample: document.getElementById('btnSample'),
-    btnClear: document.getElementById('btnClear'),
-    btnCSV: document.getElementById('btnCSV'),
-    btnCopy: document.getElementById('btnCopy'),
-    debug: document.getElementById('debug'),
-    errors: document.getElementById('errors'),
-    kUnits: document.getElementById('kUnits'),
-    kDur: document.getElementById('kDur'),
-    kFrames: document.getElementById('kFrames'),
-    kFps: document.getElementById('kFps'),
-    unitsBody: document.querySelector('#unitsTable tbody'),
-    filesBody: document.querySelector('#filesTable tbody'),
+    input:       document.getElementById('input'),
+    fps:         document.getElementById('fps'),
+    pairing:     document.getElementById('pairing'),
+    seqName:     document.getElementById('seqName'),
+    seqStartTc:  document.getElementById('seqStartTc'),
+    btnSample:   document.getElementById('btnSample'),
+    btnClear:    document.getElementById('btnClear'),
+    btnCSV:      document.getElementById('btnCSV'),
+    btnXML:      document.getElementById('btnXML'),
+    btnMoveUp:   document.getElementById('btnMoveUp'),
+    btnMoveDown: document.getElementById('btnMoveDown'),
+    errMsg:      document.getElementById('errMsg'),
+    kShots:      document.getElementById('kShots'),
+    kDur:        document.getElementById('kDur'),
+    kFiles:      document.getElementById('kFiles'),
+    statusbar:   document.getElementById('statusbar'),
+    emptyState:  document.getElementById('emptyState'),
+    shotTable:   document.getElementById('shotTable'),
+    shotBody:    document.getElementById('shotBody'),
+    filesBody:   document.getElementById('filesBody'),
+    voBody:      document.getElementById('voBody'),
+    voCount:     document.getElementById('voCount'),
+    voDur:       document.getElementById('voDur'),
+    voEmptyState: document.getElementById('voEmptyState'),
+    kVO:         document.getElementById('kVO'),
   };
 
-  function cleanText(s){
-    return (s || '')
-      .replace(/[\u200B\u200C\u200D\uFEFF]/g,'')
-      .normalize('NFKC');
+  let shots = [];        // [{filename, ext, inText, outText, inFrames, outFrames, durFrames, notes}]
+  let voSegments = [];   // [{label, durFrames, notes}] — VO lines without timecodes
+  let selectedRow = -1;  // index into shots[]
+
+  // ── Tag / Section Detection ──────────────────────────────────────────────────
+  // A "section tag" line is one that starts with a known label keyword and has NO timecodes.
+  // Known VO keywords (case-insensitive, may be followed by other words like 旁白 Studio):
+  const VO_TAG_RE    = /^\s*(?:V\.?O\.?(?:\s+\S.*)?|voice[\s-]?over(?:\s+\S.*)?)\s*$/i;
+  // Known non-VO section keywords that signal a new shot block:
+  const SHOT_TAG_RE  = /^\s*(?:upsot|up[\s-]?sot|interview|sync|nat[\s-]?sound|natsound|nats|sot|standup|stand[\s-]?up|b[\s-]?roll|broll|cutaway|wide|close[\s-]?up|establishing|dialogue|dialog|sfx|sound[\s-]?bite|soundbite)(?:\s+\S.*)?$/i;
+
+  function isTagLine(line) {
+    const t = cleanText(line).trim();
+    return VO_TAG_RE.test(t) || SHOT_TAG_RE.test(t);
+  }
+  function isVOTag(line) {
+    return VO_TAG_RE.test(cleanText(line).trim());
   }
 
-  // Timecodes:
-  const HMS_RE = /\b(\d{1,2}):([0-5]\d):([0-5]\d)(?:([:.])(\d{1,3}))?\b/g;  // HH:MM:SS(.mmm or :FF)
-  const MS_RE  = /\b([0-5]?\d):([0-5]\d)(?:\.(\d{1,3}))?\b/g;              // MM:SS(.mmm)
+  // Parse a user-typed duration string → frames (returns null if invalid)
+  function parseDurInput(str) {
+    const s = (str || '').trim();
+    if (!s) return 0;
+    const hmsf = s.match(/^(\d{1,2}):([0-5]\d):([0-5]\d):(\d{1,2})$/);
+    if (hmsf) {
+      const { timebase } = getTimebaseInfo();
+      return (parseInt(hmsf[1])*3600 + parseInt(hmsf[2])*60 + parseInt(hmsf[3])) * timebase + parseInt(hmsf[4]);
+    }
+    const hms = s.match(/^(\d{1,2}):([0-5]\d):([0-5]\d)$/);
+    if (hms) {
+      const { timebase } = getTimebaseInfo();
+      return (parseInt(hms[1])*3600 + parseInt(hms[2])*60 + parseInt(hms[3])) * timebase;
+    }
+    const ms = s.match(/^(\d{1,3}):([0-5]\d)$/);
+    if (ms) {
+      const { timebase } = getTimebaseInfo();
+      return (parseInt(ms[1])*60 + parseInt(ms[2])) * timebase;
+    }
+    const sec = s.match(/^(\d+(?:\.\d+)?)s?$/);
+    if (sec) {
+      const { timebase } = getTimebaseInfo();
+      return Math.round(parseFloat(sec[1]) * timebase);
+    }
+    return null;
+  }
 
-  function tcToMs_HMS(match){
+  // ── Timecode Parsing ────────────────────────────────────────────────────────
+  const HMS_RE = /\b(\d{1,2}):([0-5]\d):([0-5]\d)(?:([:.])(\d{1,3}))?\b/g;
+  const MS_RE  = /\b([0-5]?\d):([0-5]\d)(?:\.(\d{1,3}))?\b/g;
+
+  function cleanText(s) {
+    return (s || '').replace(/[\u200B\u200C\u200D\uFEFF]/g, '').normalize('NFKC');
+  }
+
+  function getFps() { return parseFloat(el.fps.value); }
+
+  function getTimebaseInfo() {
+    const fps = getFps();
+    if (Math.abs(fps - 23.976) < 0.01) return { timebase: 24, ntsc: 'TRUE', fps };
+    if (Math.abs(fps - 29.97)  < 0.01) return { timebase: 30, ntsc: 'TRUE', fps };
+    if (Math.abs(fps - 59.94)  < 0.01) return { timebase: 60, ntsc: 'TRUE', fps };
+    return { timebase: Math.round(fps), ntsc: 'FALSE', fps };
+  }
+
+  function tcToFrames_HMS(match) {
     const [full, h, m, s, sep, sub] = match;
-    const HH = parseInt(h,10), MM = parseInt(m,10), SS = parseInt(s,10);
-    let ms = (HH*3600 + MM*60 + SS) * 1000;
-    if (sep === '.'){
-      const fract = String(sub||'').padEnd(3,'0').slice(0,3);
-      ms += parseInt(fract,10);
-    } else if (sep === ':'){
-      const fps = parseFloat(el.fps.value);
-      const FF = parseInt(sub||'0',10);
-      ms += Math.round(1000 * (FF / fps));
+    const { timebase } = getTimebaseInfo();
+    const base = (parseInt(h,10)*3600 + parseInt(m,10)*60 + parseInt(s,10)) * timebase;
+    if (sep === ':') return { text: full, frames: base + parseInt(sub||'0',10) };
+    if (sep === '.') {
+      const ms = parseInt(String(sub||'').padEnd(3,'0').slice(0,3),10);
+      return { text: full, frames: Math.round(((parseInt(h,10)*3600+parseInt(m,10)*60+parseInt(s,10)) + ms/1000) * timebase) };
     }
-    return { text: full, ms };
+    return { text: full, frames: base };
   }
-  function tcToMs_MS(match){
+
+  function tcToFrames_MS(match) {
     const [full, mm, ss, mmm] = match;
-    const MM = parseInt(mm,10), SS = parseInt(ss,10);
-    let ms = (MM*60 + SS) * 1000;
-    if (mmm != null){
-      const fract = String(mmm||'').padEnd(3,'0').slice(0,3);
-      ms += parseInt(fract,10);
-    }
-    return { text: full, ms };
+    const { timebase } = getTimebaseInfo();
+    let secs = parseInt(mm,10)*60 + parseInt(ss,10);
+    if (mmm != null) secs += parseInt(String(mmm||'').padEnd(3,'0').slice(0,3),10) / 1000;
+    return { text: full, frames: Math.round(secs * timebase) };
   }
 
-  function findTimecodes(text){
+  function findTimecodes(text) {
     const t = cleanText(text);
-    const candidates = [];
-    const occupied = [];
-
+    const candidates = [], occupied = [];
     let m;
     HMS_RE.lastIndex = 0;
-    while ((m = HMS_RE.exec(t))){
-      candidates.push({ idx: m.index, tc: tcToMs_HMS(m) });
+    while ((m = HMS_RE.exec(t))) {
+      candidates.push({ idx: m.index, tc: tcToFrames_HMS(m) });
       occupied.push([m.index, m.index + m[0].length]);
     }
-
     MS_RE.lastIndex = 0;
-    while ((m = MS_RE.exec(t))){
-      const start = m.index, end = m.index + m[0].length;
-      const overlaps = occupied.some(([a,b]) => start < b && end > a);
-      if (!overlaps){
-        candidates.push({ idx: m.index, tc: tcToMs_MS(m) });
-      }
+    while ((m = MS_RE.exec(t))) {
+      const [s, e] = [m.index, m.index + m[0].length];
+      if (!occupied.some(([a,b]) => s < b && e > a))
+        candidates.push({ idx: s, tc: tcToFrames_MS(m) });
     }
-
-    candidates.sort((a,b)=> a.idx - b.idx);
-    return candidates.map(x => x.tc);
+    return candidates.sort((a,b) => a.idx-b.idx).map(x => x.tc);
   }
 
-  function msToHMS(ms){
+  function framesToHMSms(frames) {
+    const { timebase } = getTimebaseInfo();
+    const ms = Math.round(frames * 1000 / timebase);
     const sign = ms < 0 ? '-' : '';
-    ms = Math.abs(ms);
-    const h = Math.floor(ms/3600000); ms %= 3600000;
-    const m = Math.floor(ms/60000); ms %= 60000;
-    const s = Math.floor(ms/1000);
-    const msr = Math.floor(ms % 1000);
-    return sign + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0') + '.' + String(msr).padStart(3,'0');
-  }
-  function msToFrames(ms){
-    const fps = parseFloat(el.fps.value);
-    return Math.round(ms * fps / 1000);
+    let t = Math.abs(ms);
+    const h = Math.floor(t/3600000); t %= 3600000;
+    const mn = Math.floor(t/60000); t %= 60000;
+    const s = Math.floor(t/1000);
+    const r = Math.floor(t % 1000);
+    return sign + pad2(h) + ':' + pad2(mn) + ':' + pad2(s) + '.' + String(r).padStart(3,'0');
   }
 
-  // Filenames
-  const ANY_FILENAME_RE = /\b([A-Za-z0-9][A-Za-z0-9._-]*\.[A-Za-z0-9]{2,6})\b/g;
-  const PREFERRED_EXTS = new Set(['mp4','mov','mxf','mkv','avi','mpg','mpeg','m4v','flv','webm','wmv','mts','m2ts','ts','r3d','braw','ari','arx','dpx','cin','cine','hevc','h264','h265']);
-  function findFilenames(text){
+  function framesToTCString(frames) {
+    const { timebase } = getTimebaseInfo();
+    const totalSec = Math.floor(frames / timebase);
+    const ff = frames % timebase;
+    const h = Math.floor(totalSec/3600);
+    const m = Math.floor((totalSec%3600)/60);
+    const s = totalSec % 60;
+    return pad2(h)+':'+pad2(m)+':'+pad2(s)+':'+pad2(ff);
+  }
+
+  function pad2(n) { return String(n).padStart(2,'0'); }
+
+  // ── Filename Detection ──────────────────────────────────────────────────────
+  const ANY_FN_RE = /\b([A-Za-z0-9][A-Za-z0-9._-]*\.[A-Za-z0-9]{2,6})\b/g;
+  const VIDEO_EXTS = new Set(['mp4','mov','mxf','mkv','avi','mpg','mpeg','m4v','flv','webm','wmv','mts','m2ts','ts','r3d','braw','ari','arx','dpx','cin','cine','hevc','h264','h265','dng']);
+
+  function findFilenames(text) {
     const t = cleanText(text);
     const found = [];
     let m;
-    ANY_FILENAME_RE.lastIndex = 0;
-    while ((m = ANY_FILENAME_RE.exec(t))){
+    ANY_FN_RE.lastIndex = 0;
+    while ((m = ANY_FN_RE.exec(t))) {
       const fn = m[1];
       const ext = fn.split('.').pop().toLowerCase();
-      found.push({fn, ext});
+      found.push({ fn, ext, preferred: VIDEO_EXTS.has(ext) });
     }
     return found;
   }
-  function choosePrimaryFilename(list){
-    if (!list || list.length === 0) return '';
-    const preferred = list.find(x => PREFERRED_EXTS.has(x.ext));
-    return (preferred ? preferred.fn : list[0].fn);
+
+  function choosePrimary(list) {
+    if (!list?.length) return null;
+    return list.find(x => x.preferred) || list[0];
   }
 
-  function pairsFromTimecodes(tcs){
-    const pairs = [];
-    for (let i=0;i<tcs.length-1;i+=2){
-      pairs.push({in:tcs[i], out:tcs[i+1], durMs: tcs[i+1].ms - tcs[i].ms});
+  // ── Master Block Parser ──────────────────────────────────────────────────────
+  // Flattens ALL input (tables or plain text) into a single line array,
+  // then does one top-down pass grouping lines under their section tag.
+  // Returns: { shots: [...], voSegments: [...] }
+  //
+  // A "block" starts when a tag line is encountered.
+  //   • VO tag  → accumulate script lines until next tag → one voSegment
+  //   • Shot tag → accumulate filename + TC lines until next tag → one or more shots
+  //   • No tag yet (pre-amble) → treated as shot block (legacy behaviour)
+
+  function getAllLines(root) {
+    const lines = [];
+    const tables = root.querySelectorAll('table');
+    if (tables.length) {
+      // Each table cell becomes its own mini-block of lines
+      tables.forEach(tbl => tbl.querySelectorAll('tr').forEach(tr =>
+        tr.querySelectorAll('th,td').forEach(td => {
+          const cellLines = (td.innerText || '').split(/\r?\n/).map(l => cleanText(l).trim()).filter(Boolean);
+          lines.push(...cellLines);
+        })
+      ));
+    } else {
+      const text = root.innerText || '';
+      cleanText(text).split(/\r?\n/).map(l => l.trim()).filter(Boolean).forEach(l => lines.push(l));
     }
-    return pairs;
+    return lines;
   }
 
-  function parseCellByLines(cellText){
-    const lines = cleanText(cellText).split(/\r?\n/).map(l => l.trim()).filter(l => l.length>0);
-    let currentFile = '';
-    const perFilePairs = new Map();
+  function parseAllBlocks(root) {
+    const lines = collectLines(root); // [{text, struck}]
+    const newShots = [];
+    const newVOs = [];
 
-    for (const line of lines){
-      const fns = findFilenames(line);
-      if (fns.length) currentFile = choosePrimaryFilename(fns) || currentFile;
+    // Group into blocks: [{tag, tagStruck, isVO, lines:[{text,struck}]}]
+    const blocks = [];
+    let current = null;
 
-      const tcs = findTimecodes(line);
-      if (tcs.length >= 2){
-        const pairs = pairsFromTimecodes(tcs);
-        const key = currentFile || '(unlabeled)';
-        const arr = perFilePairs.get(key) || [];
-        arr.push(...pairs);
-        perFilePairs.set(key, arr);
+    for (const line of lines) {
+      if (isTagLine(line.text)) {
+        if (current) blocks.push(current);
+        current = { tag: line.text, tagStruck: line.struck, isVO: isVOTag(line.text), lines: [] };
+      } else {
+        if (!current) current = { tag: null, tagStruck: false, isVO: false, lines: [] };
+        current.lines.push(line);
+      }
+    }
+    if (current) blocks.push(current);
+
+    // Process each block
+    for (const block of blocks) {
+      // If the tag line itself is struck, the whole block is struck
+      const blockStruck = block.tagStruck;
+
+      if (block.isVO) {
+        const scriptLines = block.lines.filter(l => {
+          const tcs = findTimecodes(l.text);
+          const fns = findFilenames(l.text);
+          const hasVideo = fns.some(f => f.preferred);
+          return tcs.length === 0 && !hasVideo;
+        });
+        if (scriptLines.length > 0 || block.tag) {
+          const label = block.tag ? cleanText(block.tag).trim() : 'VO';
+          const script = scriptLines.map(l => l.text).join(' / ');
+          // VO is struck if tag is struck OR all script lines are struck
+          const voStruck = blockStruck || (scriptLines.length > 0 && scriptLines.every(l => l.struck));
+          newVOs.push({ label, script, struck: voStruck, durFrames: 0, durInput: '', notes: '' });
+        }
+      } else {
+        // Shot block: extract filename + TC pairs
+        let currentFn = null;
+        for (const line of block.lines) {
+          // A shot line is struck if the block tag is struck, or the line itself is struck
+          const lineStruck = blockStruck || line.struck;
+
+          const fns = findFilenames(line.text);
+          if (fns.length) {
+            const pref = choosePrimary(fns);
+            if (pref) currentFn = pref;
+          }
+          const tcs = findTimecodes(line.text);
+          if (tcs.length >= 2) {
+            for (let i = 0; i < tcs.length - 1; i += 2) {
+              const dur = tcs[i+1].frames - tcs[i].frames;
+              if (dur <= 0) continue;
+              newShots.push({
+                sectionTag: block.tag || '',
+                filename:   currentFn?.fn || '(unlabeled)',
+                ext:        currentFn?.ext || '',
+                inText:  tcs[i].text,   inFrames:  tcs[i].frames,
+                outText: tcs[i+1].text, outFrames: tcs[i+1].frames,
+                durFrames: dur,
+                struck: lineStruck,
+                notes: ''
+              });
+            }
+          }
+        }
       }
     }
 
-    let totalPairs = 0;
-    for (const pairs of perFilePairs.values()) totalPairs += pairs.length;
-    return { perFilePairs, totalPairs };
+    return { newShots, newVOs };
   }
 
-  function parseCellGlobal(cellText){
-    const txt = cleanText(cellText);
-    const primary = choosePrimaryFilename(findFilenames(txt)) || '';
-    const tcs = findTimecodes(txt);
-    const pairs = pairsFromTimecodes(tcs);
-    const perFilePairs = new Map();
-    perFilePairs.set(primary || '(unlabeled)', pairs);
-    return { perFilePairs, totalPairs: pairs.length };
+  function getAllCells(root) {
+    // Legacy helper kept for status bar count
+    return collectLines(root).map(l => l.text);
   }
 
-  function parseCell(cellText){
-    const mode = el.pairing.value;
-    const byLine = parseCellByLines(cellText);
-    const byGlobal = parseCellGlobal(cellText);
-    if (mode === 'line') return byLine;
-    if (mode === 'global') return byGlobal;
-    return (byLine.totalPairs > 0) ? byLine : byGlobal;
+  // ── DOM Line Extractor (preserves strikethrough metadata) ───────────────────
+  // Walks the DOM and returns [{text, struck}] for every non-empty line.
+  // A line is "struck" if it (or any ancestor) has strikethrough formatting.
+
+  function isStruckNode(node) {
+    if (node.nodeType !== 1) return false;
+    const tag = node.tagName.toLowerCase();
+    if (tag === 's' || tag === 'strike' || tag === 'del') return true;
+    const style = node.getAttribute('style') || '';
+    if (/line-through/i.test(style)) return true;
+    // Google Docs / Word inline span with text-decoration
+    try {
+      const cs = window.getComputedStyle ? null : null; // skip computed (too slow)
+      void cs;
+    } catch(e) {}
+    return false;
   }
 
-  function getAllCells(root){
-    const cells = [];
-    const tables = root.querySelectorAll('table');
-    if (tables.length){
-      tables.forEach((tbl) => {
-        const rows = tbl.querySelectorAll('tr');
-        rows.forEach((tr) => {
-          const tds = tr.querySelectorAll('th,td');
-          tds.forEach((td) => cells.push({ text: td.innerText || '' }));
-        });
-      });
-    } else {
-      const text = root.innerText || '';
-      const lines = cleanText(text).split(/\r?\n/).filter(l => l.trim().length>0);
-      lines.forEach((l) => cells.push({ text: l }));
+  function collectLines(root) {
+    // Result: [{text: string, struck: boolean}]
+    const result = [];
+    let buf = '';
+    let bufStruck = false;
+
+    function flush() {
+      const t = cleanText(buf).trim();
+      if (t) result.push({ text: t, struck: bufStruck });
+      buf = '';
+      bufStruck = false;
     }
-    return cells;
+
+    function walk(node, inheritStruck) {
+      if (node.nodeType === 3) { // text node
+        buf += node.textContent;
+        if (inheritStruck) bufStruck = true;
+        return;
+      }
+      if (node.nodeType !== 1) return;
+
+      const tag = node.tagName.toLowerCase();
+      const struck = inheritStruck || isStruckNode(node);
+
+      // Block-level elements → flush current line first
+      const isBlock = /^(div|p|br|tr|li|h[1-6]|blockquote|section|article|pre)$/.test(tag);
+      if (tag === 'br') { flush(); return; }
+      if (isBlock && buf.trim()) flush();
+
+      // Table cells: walk children then flush
+      if (tag === 'td' || tag === 'th') {
+        for (const child of node.childNodes) walk(child, struck);
+        flush();
+        return;
+      }
+
+      for (const child of node.childNodes) walk(child, struck);
+
+      if (isBlock && buf.trim()) flush();
+    }
+
+    walk(root, false);
+    flush();
+    return result.filter(l => l.text.length > 0);
   }
 
-  function analyze(){
-    el.errors.textContent = '';
-    el.unitsBody.innerHTML = '';
-    el.filesBody.innerHTML = '';
+  function getAllLines(root) {
+    // Plain text lines for status bar — kept simple
+    return collectLines(root).map(l => l.text);
+  }
 
-    el.kFps.textContent = el.fps.value;
+  // ── Analyze ─────────────────────────────────────────────────────────────────
+  function analyze() {
+    el.errMsg.textContent = '';
+    const cells = getAllCells(el.input); // for status bar count only
 
-    const cells = getAllCells(el.input);
-    const units = [];
-    const fileTotals = new Map();
+    const { newShots, newVOs } = parseAllBlocks(el.input);
 
-    let totalMs = 0;
-    let totalFrames = 0;
+    // Preserve existing notes on shots
+    newShots.forEach(ns => {
+      const match = shots.find(s => s.filename === ns.filename && s.inText === ns.inText && s.outText === ns.outText);
+      if (match) ns.notes = match.notes;
+    });
 
-    for (const c of cells){
-      const cellText = c.text || '';
-      const { perFilePairs, totalPairs } = parseCell(cellText);
-      if (totalPairs === 0) continue;
+    // Preserve existing durInput & notes on VO segments (matched by label)
+    newVOs.forEach(nv => {
+      const existing = voSegments.find(v => v.label === nv.label);
+      if (existing) { nv.durInput = existing.durInput; nv.durFrames = existing.durFrames; nv.notes = existing.notes; }
+    });
 
-      const primaryName = choosePrimaryFilename(findFilenames(cellText)) || '(unlabeled)';
+    shots = newShots;
+    voSegments = newVOs;
+    selectedRow = -1;
 
-      let unitMs = 0;
-      let unitPairsCount = 0;
+    const rawText = cleanText(el.input.innerText || '');
+    const tcCount = (() => { const R = /\b(\d{1,2}:[0-5]\d:[0-5]\d(?:[.:]\d{1,3})?|\d{1,2}:[0-5]\d(?:\.\d{1,3})?)\b/g; let n=0; while(R.exec(rawText)) n++; return n; })();
+    el.statusbar.textContent = `Lines: ${getAllLines(el.input).length} · Timecodes found: ${tcCount} · Shots: ${shots.length} · VO blocks: ${voSegments.length}`;
 
-      const inTexts = [];
-      const outTexts = [];
+    renderShotList();
+    renderFilesTable();
+    renderVOTable();
+    updateKPIs();
+  }
 
-      for (const [fname, pairs] of perFilePairs.entries()){
-        for (const p of pairs){
-          unitPairsCount += 1;
-          inTexts.push(p.in.text);
-          outTexts.push(p.out.text);
+  // ── Render Shot List ─────────────────────────────────────────────────────────
+  function renderShotList() {
+    el.shotBody.innerHTML = '';
+    if (!shots.length) {
+      el.emptyState.style.display = 'flex';
+      el.shotTable.style.display = 'none';
+      return;
+    }
+    el.emptyState.style.display = 'none';
+    el.shotTable.style.display = 'table';
 
-          if (p.durMs <= 0) continue;
-          unitMs += p.durMs;
+    const activeShots = shots.filter(s => !s.struck);
+    const maxDur = Math.max(...activeShots.map(s => s.durFrames), 1);
 
-          const key = (fname && fname !== '(unlabeled)') ? fname : primaryName;
-          const t = fileTotals.get(key) || {pairs:0, ms:0, frames:0};
-          t.pairs += 1;
-          t.ms += p.durMs;
-          t.frames += msToFrames(p.durMs);
-          fileTotals.set(key, t);
+    let tlFrames = 0;
+    shots.forEach((shot, i) => {
+      const isStruck = shot.struck;
+      const tl = isStruck ? '—' : framesToTCString(tlFrames);
+      if (!isStruck) tlFrames += shot.durFrames;
+
+      const pct = isStruck ? 0 : Math.round((shot.durFrames / maxDur) * 100);
+      const name = shot.filename;
+      const nameBase = name.includes('.') ? name.slice(0, name.lastIndexOf('.')) : name;
+      const ext = shot.ext ? shot.ext.toUpperCase() : '';
+
+      const tr = document.createElement('tr');
+      tr.draggable = true;
+      tr.dataset.idx = i;
+      if (i === selectedRow) tr.style.background = '#0f1e32';
+      if (isStruck) tr.style.opacity = '0.45';
+
+      const struckStyle = isStruck ? 'text-decoration:line-through;' : '';
+      const struckColor = isStruck ? 'color:#3a4d60;' : '';
+
+      tr.innerHTML = `
+        <td class="cell-handle inner"><span class="row-drag">⠿</span></td>
+        <td class="cell-seq inner" style="${struckColor}">${String(i+1).padStart(3,'0')}</td>
+        <td class="cell-file inner">
+          ${shot.sectionTag ? `<div style="font-size:9px;color:#3a5070;font-family:var(--sans);letter-spacing:0.5px;margin-bottom:3px;text-transform:uppercase;${struckStyle}">${escHtml(shot.sectionTag)}</div>` : ''}
+          <span class="filename" style="${struckStyle}${struckColor}">${escHtml(nameBase)}</span>${ext && !isStruck ? `<span class="ext-badge">${escHtml(ext)}</span>` : ''}
+          ${isStruck ? `<span style="font-size:9px;color:#ff5c5c;margin-left:6px;font-family:var(--sans);letter-spacing:0.5px">EXCLUDED</span>` : ''}
+        </td>
+        <td class="cell-tc inner" style="${struckStyle}${struckColor}">
+          <span class="tc-in" style="${isStruck?'color:#2d4030':''}">${escHtml(shot.inText)}</span><span class="tc-sep">→</span><span class="tc-out" style="${isStruck?'color:#3d3020':''}">${escHtml(shot.outText)}</span>
+        </td>
+        <td class="cell-dur">
+          <div class="inner" style="${struckStyle}${struckColor}">${isStruck ? framesToHMSms(shot.durFrames) : framesToHMSms(shot.durFrames)}</div>
+          <div class="dur-bar-wrap"><div class="dur-bar" style="width:${pct}%;${isStruck?'background:#2a3040':''};opacity:${isStruck?'0.3':'1'}"></div></div>
+        </td>
+        <td class="cell-frames inner" style="${struckStyle}${struckColor}">${shot.durFrames}</td>
+        <td class="cell-tl inner" style="${struckColor}">${escHtml(tl)}</td>
+        <td class="cell-notes"><input class="notes-input" placeholder="Add note…" value="${escHtml(shot.notes)}" data-idx="${i}" style="${isStruck?'color:#2d3a4a;':''}" ${isStruck?'disabled':''}/></td>
+      `;
+
+      tr.addEventListener('click', (e) => {
+        if (e.target.classList.contains('notes-input')) return;
+        selectedRow = i;
+        highlightSelected();
+      });
+
+      tr.addEventListener('dragstart', onDragStart);
+      tr.addEventListener('dragover', onDragOver);
+      tr.addEventListener('drop', onDrop);
+      tr.addEventListener('dragend', onDragEnd);
+
+      el.shotBody.appendChild(tr);
+    });
+
+    el.shotBody.querySelectorAll('.notes-input').forEach(inp => {
+      inp.addEventListener('input', () => {
+        shots[parseInt(inp.dataset.idx)].notes = inp.value;
+      });
+    });
+  }
+
+  function highlightSelected() {
+    el.shotBody.querySelectorAll('tr').forEach((tr, i) => {
+      tr.style.background = i === selectedRow ? '#0f1e32' : '';
+    });
+  }
+
+  // ── Render VO Table ──────────────────────────────────────────────────────────
+  function renderVOTable() {
+    el.voBody.innerHTML = '';
+    if (!voSegments.length) {
+      el.voEmptyState.style.display = 'block';
+      el.voCount.textContent = '0';
+      el.voDur.textContent = '—';
+      return;
+    }
+    el.voEmptyState.style.display = 'none';
+
+    voSegments.forEach((vo, i) => {
+      const isStruck = vo.struck;
+      const struckStyle = isStruck ? 'text-decoration:line-through;' : '';
+      const struckColor = isStruck ? 'color:#3a2a5a;' : '';
+
+      // Build estimate pill HTML
+      let estHtml = '';
+      if (guideVisible && !isStruck && vo.script) {
+        if (vo._estStr != null) {
+          const { cjkChars, enWords } = detectLangComposition(vo.script);
+          const breakdown = [
+            cjkChars ? `${cjkChars} ZH ch` : '',
+            enWords  ? `${enWords} EN w`  : ''
+          ].filter(Boolean).join(' + ');
+          estHtml = `
+            <div style="margin-top:7px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span class="est-pill" title="${breakdown}">
+                <svg width="9" height="9" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/><path d="M6 3.5v2.5l1.5 1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                <span class="est-src">est.</span>
+                <span class="est-val">${vo._estStr}</span>
+                ${breakdown ? `<span class="est-src" style="margin-left:2px">(${breakdown})</span>` : ''}
+                <button class="btn-use-est" data-use-idx="${i}" data-use-val="${vo._estStr}">← Use</button>
+              </span>
+            </div>`;
+        } else {
+          estHtml = `<div style="margin-top:5px;font-size:10px;color:#3a2560;font-family:var(--mono);font-style:italic">no script text to estimate</div>`;
         }
       }
 
-      const unitFrames = msToFrames(unitMs);
-      totalMs += unitMs;
-      totalFrames += unitFrames;
-
-      units.push({
-        name: primaryName,
-        inList: inTexts.join('\n'),
-        outList: outTexts.join('\n'),
-        pairs: unitPairsCount,
-        ms: unitMs,
-        frames: unitFrames
-      });
-    }
-
-    el.kUnits.textContent = String(units.length);
-    el.kDur.textContent = msToHMS(totalMs);
-    el.kFrames.textContent = String(totalFrames);
-
-    const rawText = cleanText(el.input.innerText || '');
-    const tcCount = (() => {
-      const TOK_RE = /\b(\d{1,2}:[0-5]\d:[0-5]\d(?:[.:]\d{1,3})?|\d{1,2}:[0-5]\d(?:\.\d{1,3})?)\b/g;
-      let n=0; TOK_RE.lastIndex=0; while(TOK_RE.exec(rawText)) n++; return n;
-    })();
-    el.debug.textContent = `Cells: ${cells.length} • Timecodes found: ${tcCount} • Units parsed: ${units.length}`;
-
-    units.forEach((u, i) => {
       const tr = document.createElement('tr');
-      const cols = [String(i+1), u.name, u.inList, u.outList, String(u.pairs), msToHMS(u.ms), String(u.frames)];
-      cols.forEach((v, idx) => {
-        const td = document.createElement('td');
-        td.textContent = v;
-        if (idx === 2 || idx === 3) td.className = 'multiline';
-        if (idx === 4 || idx === 6) td.className = 'right nowrap';
-        if (idx === 5) td.className = 'nowrap';
-        tr.appendChild(td);
-      });
-      el.unitsBody.appendChild(tr);
+      if (isStruck) tr.style.opacity = '0.45';
+      tr.innerHTML = `
+        <td style="font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center;padding:10px 12px;${struckColor}">${String(i+1).padStart(3,'0')}</td>
+        <td style="padding:10px 12px">
+          <span class="vo-badge" style="${isStruck?'opacity:0.4':''}">🎙 VO</span>
+          <span style="font-family:var(--sans);font-size:11px;${isStruck?'color:#3a2a5a':'color:#7a5aaa'};margin-left:6px;text-transform:uppercase;letter-spacing:0.6px;${struckStyle}">${escHtml(vo.label)}</span>
+          ${isStruck ? `<span style="font-size:9px;color:#ff5c5c;margin-left:8px;font-family:var(--sans);letter-spacing:0.5px">EXCLUDED</span>` : ''}
+          ${vo.script ? `<div style="font-family:var(--mono);font-size:11.5px;${isStruck?'color:#3a2a5a;':'color:#b87fff;'}margin-top:5px;line-height:1.6;font-style:italic;${struckStyle}">${escHtml(vo.script)}</div>` : ''}
+          ${estHtml}
+        </td>
+        <td style="padding:8px 12px">
+          ${isStruck
+            ? `<span style="font-family:var(--mono);font-size:11px;color:#2a1a3a;font-style:italic">excluded</span>`
+            : `<input class="vo-dur-input" data-idx="${i}" placeholder="e.g. 0:45 or 1:20" value="${escHtml(vo.durInput)}" title="Enter duration as MM:SS, HH:MM:SS, or seconds"/>`
+          }
+        </td>
+        <td style="font-family:var(--mono);font-size:11px;${struckColor}padding:10px 12px" id="voFrames-${i}">${!isStruck && vo.durFrames ? vo.durFrames + ' fr  (' + framesToHMSms(vo.durFrames) + ')' : '—'}</td>
+        <td style="padding:8px 12px">
+          <input class="notes-input" style="padding:3px 8px${isStruck?';color:#2d3a4a':''}" placeholder="Add note…" data-vo-idx="${i}" value="${escHtml(vo.notes)}" ${isStruck?'disabled':''}/>
+        </td>
+      `;
+      el.voBody.appendChild(tr);
     });
 
-    const filesSorted = Array.from(fileTotals.entries()).sort((a,b)=> b[1].ms - a[1].ms);
-    filesSorted.forEach(([name, t]) => {
-      const tr = document.createElement('tr');
-      const cols = [name, String(t.pairs), String(t.frames), msToHMS(t.ms)];
-      cols.forEach((v, idx) => {
-        const td = document.createElement('td');
-        td.textContent = v;
-        if (idx === 1 || idx === 2) td.className = 'right nowrap';
-        if (idx === 3) td.className = 'nowrap';
-        tr.appendChild(td);
+    // Wire up dur inputs (only for non-struck)
+    el.voBody.querySelectorAll('.vo-dur-input').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const idx = parseInt(inp.dataset.idx);
+        const val = inp.value.trim();
+        const frames = parseDurInput(val);
+        if (frames === null && val !== '') {
+          inp.classList.add('invalid');
+          voSegments[idx].durFrames = 0;
+          voSegments[idx].durInput = val;
+        } else {
+          inp.classList.remove('invalid');
+          voSegments[idx].durFrames = frames || 0;
+          voSegments[idx].durInput = val;
+        }
+        const fCell = document.getElementById(`voFrames-${idx}`);
+        if (fCell) fCell.textContent = voSegments[idx].durFrames ? voSegments[idx].durFrames + ' fr  (' + framesToHMSms(voSegments[idx].durFrames) + ')' : '—';
+        updateVOSummary();
+        updateKPIs();
       });
+    });
+
+    el.voBody.querySelectorAll('[data-vo-idx]').forEach(inp => {
+      inp.addEventListener('input', () => { voSegments[parseInt(inp.dataset.voIdx)].notes = inp.value; });
+    });
+
+    // "Use" estimate buttons
+    el.voBody.querySelectorAll('[data-use-idx]').forEach(btn => {
+      btn.addEventListener('click', () => applyEstimate(parseInt(btn.dataset.useIdx), btn.dataset.useVal));
+    });
+
+    updateVOSummary();
+  }
+
+  // ── Duration Guide (local estimate only) ────────────────────────────────────
+  let guideVisible = false;
+
+  document.getElementById('btnGuideToggle').addEventListener('click', () => {
+    guideVisible = !guideVisible;
+    const bar = document.getElementById('guideBar');
+    bar.style.display = guideVisible ? 'flex' : 'none';
+    const btn = document.getElementById('btnGuideToggle');
+    btn.style.background    = guideVisible ? '#2a1050' : '#140f28';
+    btn.style.borderColor   = guideVisible ? '#5a2a90' : '#2a1a4a';
+    if (guideVisible) runLocalEstimates();
+  });
+
+  document.getElementById('rateZh').addEventListener('change', () => { if (guideVisible) runLocalEstimates(); });
+  document.getElementById('rateEn').addEventListener('change', () => { if (guideVisible) runLocalEstimates(); });
+  document.getElementById('btnEstimateAll').addEventListener('click', runLocalEstimates);
+
+  // Language classifier: counts CJK characters and English word tokens separately
+  function detectLangComposition(text) {
+    const cjkRe   = /[\u4E00-\u9FFF\u3400-\u4DBF\uF900-\uFAFF]/g;
+    const cjkChars = (text.match(cjkRe) || []).length;
+    const enWords  = (text.match(/\b[a-zA-Z''\-]+\b/g) || []).length;
+    const nums     = (text.match(/\b\d+\.?\d*\b/g) || []).length;
+    return { cjkChars, enWords: enWords + nums };
+  }
+
+  // Core estimator: applies separate rates for ZH and EN, adds 15% pacing buffer
+  function localEstimateSecs(script) {
+    if (!script?.trim()) return null;
+    const rateZh = parseFloat(document.getElementById('rateZh').value);
+    const rateEn = parseFloat(document.getElementById('rateEn').value);
+    const { cjkChars, enWords } = detectLangComposition(script);
+    if (cjkChars === 0 && enWords === 0) return null;
+    const raw = (cjkChars / rateZh) + (enWords / rateEn);
+    return raw * 1.15; // 15% buffer for natural pauses and breath
+  }
+
+  function secsToMMSS(secs) {
+    const s = Math.round(secs);
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  }
+
+  function runLocalEstimates() {
+    voSegments.forEach(vo => {
+      if (vo.struck || !vo.script) return;
+      const secs = localEstimateSecs(vo.script);
+      if (secs !== null) {
+        vo._estSecs = secs;
+        vo._estStr  = secsToMMSS(secs);
+      }
+    });
+    renderVOTable();
+  }
+
+  // Flash-confirm when estimate is applied
+  function applyEstimate(idx, mmss) {
+    const inp = document.querySelector(`.vo-dur-input[data-idx="${idx}"]`);
+    if (!inp) return;
+    inp.value = mmss;
+    inp.dispatchEvent(new Event('input'));
+    inp.style.borderColor = '#2de08a';
+    inp.style.color = '#2de08a';
+    setTimeout(() => { inp.style.borderColor = ''; inp.style.color = ''; }, 700);
+  }
+
+  function updateVOSummary() {
+    const activeVOs    = voSegments.filter(v => !v.struck);
+    const totalVOFrames = activeVOs.reduce((a, v) => a + (v.durFrames || 0), 0);
+    const struckCount  = voSegments.filter(v => v.struck).length;
+    el.voCount.textContent = activeVOs.length + (struckCount ? ` (+${struckCount} excl.)` : '');
+    el.voDur.textContent   = totalVOFrames ? framesToHMSms(totalVOFrames).slice(0, -4) : '—';
+  }
+
+  
+  function renderFilesTable() {
+    el.filesBody.innerHTML = '';
+    const fileMap = new Map();
+    shots.filter(s => !s.struck).forEach(s => {
+      const e = fileMap.get(s.filename) || { shots: 0, frames: 0 };
+      e.shots++;
+      e.frames += s.durFrames;
+      fileMap.set(s.filename, e);
+    });
+    const totalFrames = shots.filter(s => !s.struck).reduce((a,s) => a+s.durFrames, 0);
+    const sorted = Array.from(fileMap.entries()).sort((a,b) => b[1].frames - a[1].frames);
+    sorted.forEach(([name, d]) => {
+      const pct = totalFrames ? Math.round(d.frames / totalFrames * 100) : 0;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-family:var(--mono);font-size:12px">${escHtml(name)}</td>
+        <td style="font-family:var(--mono);font-size:12px;color:var(--muted)">${d.shots}</td>
+        <td style="font-family:var(--mono);font-size:12px">${framesToHMSms(d.frames)}</td>
+        <td style="font-family:var(--mono);font-size:12px;color:var(--muted)">${d.frames}</td>
+        <td>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:3px">${pct}%</div>
+          <div class="file-usage-bar"><div class="file-usage-fill" style="width:${pct}%"></div></div>
+        </td>
+      `;
       el.filesBody.appendChild(tr);
     });
-
-    el.btnCSV.onclick = () => {
-      const header = ['unit_index','unit_name','timecode_in','timecode_out','pairs','duration_hms','frames'];
-      const rows = units.map((u, i) => [i+1, u.name, u.inList, u.outList, u.pairs, msToHMS(u.ms), u.frames]);
-      const csv = [header].concat(rows).map(r => r.map(v => {
-        const s = String(v ?? '');
-        return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
-      }).join(',')).join('\n');
-
-      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'timecode_units.csv';
-      a.click();
-      URL.revokeObjectURL(url);
-    };
-
-    el.btnCopy.onclick = () => {
-      const lines = [];
-      lines.push(`Total units: ${units.length}`);
-      lines.push(`Total duration: ${msToHMS(totalMs)}`);
-      lines.push(`Total frames (@${el.fps.value}): ${totalFrames}`);
-      lines.push('');
-      lines.push('By filename:');
-      filesSorted.forEach(([name, t]) => {
-        lines.push(`${name} — ${msToHMS(t.ms)} (${t.frames} fr, ${t.pairs} pairs)`);
-      });
-      navigator.clipboard.writeText(lines.join('\n')).then(()=>{
-        el.errors.textContent = 'Copied summary.';
-        setTimeout(()=> el.errors.textContent = '', 1200);
-      }).catch(()=>{
-        el.errors.textContent = 'Unable to access clipboard.';
-      });
-    };
   }
 
-  function loadSample(){
-    el.input.innerHTML = `
-      <table>
-        <tr><th>Clip unit</th><th>Notes</th></tr>
-        <tr>
-          <td>
-            C0623.mp4<br>
-            00:08:02:05 – 00:08:04:24<br>
-            00:08:04:24 - 00:08:07:23
-          </td>
-          <td>Interview A</td>
-        </tr>
-        <tr>
-          <td>
-            C0625.MXF<br>
-            00:08:12:19 - 00:08:23:14
-          </td>
-          <td>Wide angle</td>
-        </tr>
-        <tr>
-          <td>
-            Wide_B.mov<br>
-            08:30 - 08:34<br>
-            08:38 - 08:40
-          </td>
-          <td>MM:SS demo</td>
-        </tr>
-      </table>
-    `;
-    analyze();
+  // ── KPIs ────────────────────────────────────────────────────────────────────
+  function updateKPIs() {
+    const activeShots = shots.filter(s => !s.struck);
+    const activeVOs   = voSegments.filter(v => !v.struck);
+    const shotFrames  = activeShots.reduce((a, s) => a + s.durFrames, 0);
+    const voFrames    = activeVOs.reduce((a, v) => a + (v.durFrames || 0), 0);
+    const totalFrames = shotFrames + voFrames;
+    const fileCount   = new Set(activeShots.map(s => s.filename)).size;
+    const struckCount = shots.filter(s => s.struck).length + voSegments.filter(v => v.struck).length;
+    el.kShots.textContent = activeShots.length + (struckCount ? ` (+${struckCount})` : '');
+    el.kDur.textContent   = totalFrames ? framesToHMSms(totalFrames).slice(0, -4) : '—';
+    el.kFiles.textContent = fileCount;
+    el.kVO.textContent    = activeVOs.length;
   }
 
-  function clearAll(){
-    el.input.innerHTML = '';
-    el.unitsBody.innerHTML = '';
-    el.filesBody.innerHTML = '';
-    el.kUnits.textContent = '0';
-    el.kDur.textContent = '00:00:00.000';
-    el.kFrames.textContent = '0';
-    el.debug.textContent = '';
-    el.errors.textContent = '';
+  // ── Drag & Drop reorder ──────────────────────────────────────────────────────
+  let dragSrc = null;
+  function onDragStart(e) {
+    dragSrc = parseInt(e.currentTarget.dataset.idx);
+    e.currentTarget.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  }
+  function onDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    document.querySelectorAll('.drag-over').forEach(r => r.classList.remove('drag-over'));
+    e.currentTarget.classList.add('drag-over');
+  }
+  function onDrop(e) {
+    e.preventDefault();
+    const tgt = parseInt(e.currentTarget.dataset.idx);
+    if (dragSrc !== null && tgt !== dragSrc) {
+      const moved = shots.splice(dragSrc, 1)[0];
+      shots.splice(tgt, 0, moved);
+      selectedRow = tgt;
+      renderShotList();
+      renderFilesTable();
+      updateKPIs();
+    }
+  }
+  function onDragEnd(e) {
+    e.currentTarget.classList.remove('dragging');
+    document.querySelectorAll('.drag-over').forEach(r => r.classList.remove('drag-over'));
+    dragSrc = null;
   }
 
-  el.btnAnalyze.addEventListener('click', analyze);
-  el.btnSample.addEventListener('click', loadSample);
-  el.btnClear.addEventListener('click', clearAll);
-  el.fps.addEventListener('change', analyze);
-  el.pairing.addEventListener('change', analyze);
+  // ── Move Up / Down ───────────────────────────────────────────────────────────
+  el.btnMoveUp.onclick = () => {
+    if (selectedRow <= 0) return;
+    [shots[selectedRow-1], shots[selectedRow]] = [shots[selectedRow], shots[selectedRow-1]];
+    selectedRow--;
+    renderShotList();
+    highlightSelected();
+    renderFilesTable();
+    updateKPIs();
+  };
+  el.btnMoveDown.onclick = () => {
+    if (selectedRow < 0 || selectedRow >= shots.length - 1) return;
+    [shots[selectedRow], shots[selectedRow+1]] = [shots[selectedRow+1], shots[selectedRow]];
+    selectedRow++;
+    renderShotList();
+    highlightSelected();
+    renderFilesTable();
+    updateKPIs();
+  };
 
-  let t;
-  el.input.addEventListener('input', () => {
-    clearTimeout(t);
-    t = setTimeout(analyze, 150);
+  // ── Export CSV ───────────────────────────────────────────────────────────────
+  el.btnCSV.onclick = () => {
+    if (!shots.length && !voSegments.length) { el.errMsg.textContent = 'No shots to export.'; return; }
+    const header = ['shot','type','status','filename_or_label','tc_in','tc_out','duration','frames','timeline_in','notes'];
+    let tlFrames = 0;
+    const rows = shots.map((s, i) => {
+      const status = s.struck ? 'EXCLUDED' : 'ACTIVE';
+      const tl = s.struck ? '' : framesToTCString(tlFrames);
+      if (!s.struck) tlFrames += s.durFrames;
+      return [i+1, 'SHOT', status, s.filename, s.inText, s.outText, framesToHMSms(s.durFrames), s.durFrames, tl, s.notes];
+    });
+    voSegments.forEach((v, i) => {
+      const status = v.struck ? 'EXCLUDED' : 'ACTIVE';
+      rows.push([shots.length + i + 1, 'VO', status, v.label, '', '', v.durFrames ? framesToHMSms(v.durFrames) : '', v.durFrames || '', '', v.notes]);
+    });
+    const csv = [header, ...rows].map(r => r.map(v => {
+      const sv = String(v ?? '');
+      return /[",\n]/.test(sv) ? '"' + sv.replace(/"/g,'""') + '"' : sv;
+    }).join(',')).join('\n');
+    download(csv, (el.seqName.value || 'shotlist').replace(/[^\w-]+/g,'_') + '_shotlist.csv', 'text/csv');
+  };
+
+  // ── Export XML ───────────────────────────────────────────────────────────────
+  el.btnXML.onclick = () => {
+    if (!shots.length && !voSegments.length) { el.errMsg.textContent = 'No shots to export.'; return; }
+    const { timebase, ntsc } = getTimebaseInfo();
+
+    let tlFrames = 0;
+    const markers = shots.filter(s => !s.struck).map((s, i) => {
+      const start = tlFrames;
+      const end = start + s.durFrames;
+      tlFrames = end;
+      const name = `${String(i+1).padStart(3,'0')} ${s.filename}`;
+      const comment = `SRC ${s.inText} → ${s.outText}${s.notes ? ' | ' + s.notes : ''}`;
+      return { name, start, end, comment };
+    });
+
+    // VO markers appended after shots (as placeholder ranges)
+    voSegments.filter(v => !v.struck).forEach((v, i) => {
+      if (!v.durFrames) return;
+      const start = tlFrames;
+      const end = start + v.durFrames;
+      tlFrames = end;
+      const name = `VO-${String(i+1).padStart(2,'0')} ${v.label.slice(0, 40)}`;
+      const comment = `VOICE OVER | ${v.durFrames} fr${v.notes ? ' | ' + v.notes : ''}`;
+      markers.push({ name, start, end, comment });
+    });
+
+    const seqDuration = tlFrames || 1;
+    const displayformat = (ntsc === 'TRUE' && timebase === 30) ? 'DF' : 'NDF';
+    const seqName = el.seqName.value || 'Shot List Export';
+    const seqStart = el.seqStartTc.value || '00:00:00:00';
+
+    const markerXml = markers.map(m => `        <marker>
+          <comment>${xmlEsc(m.comment)}</comment>
+          <n>${xmlEsc(m.name)}</n>
+          <in>${m.start}</in>
+          <out>${m.end}</out>
+        </marker>`).join('\n');
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xmeml version="5">
+  <project>
+    <n>${xmlEsc(seqName)}</n>
+    <children>
+      <sequence id="sequence-1">
+        <n>${xmlEsc(seqName)}</n>
+        <duration>${seqDuration}</duration>
+        <rate>
+          <timebase>${timebase}</timebase>
+          <ntsc>${ntsc}</ntsc>
+        </rate>
+        <timecode>
+          <rate><timebase>${timebase}</timebase><ntsc>${ntsc}</ntsc></rate>
+          <string>${xmlEsc(seqStart)}</string>
+          <frame>0</frame>
+          <displayformat>${displayformat}</displayformat>
+        </timecode>
+${markerXml}
+        <media>
+          <video>
+            <format>
+              <samplecharacteristics>
+                <width>1920</width><height>1080</height>
+                <pixelaspectratio>square</pixelaspectratio>
+                <fielddominance>none</fielddominance>
+                <rate><timebase>${timebase}</timebase><ntsc>${ntsc}</ntsc></rate>
+              </samplecharacteristics>
+            </format>
+          </video>
+        </media>
+      </sequence>
+    </children>
+  </project>
+</xmeml>`;
+
+    download(xml, seqName.replace(/[^\w-]+/g,'_') + '_markers.xml', 'application/xml');
+    el.errMsg.textContent = '';
+    el.statusbar.textContent = 'Exported marker XML. In Premiere: File → Import → select .xml';
+    setTimeout(() => el.statusbar.textContent = `Shots: ${shots.length}`, 3000);
+  };
+
+  // ── Tabs ─────────────────────────────────────────────────────────────────────
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.tab)?.classList.add('active');
+    });
   });
+
+  // ── Sample ──────────────────────────────────────────────────────────────────
+  el.btnSample.onclick = () => {
+    el.input.innerHTML = '';
+    el.input.innerText =
+`VO 旁白 Studio
+而他目前正在试飞的Starship
+它是现在全球最大的火箭
+
+Upsot Dialogue 提高对话声
+C0016.mp4
+01:22:57:03 --> 01:23:02:07
+We're looking at reducing the cost per kilogram
+by around 70% to 80%.
+
+VO 旁白 Studio
+过去已经失火爆炸了好几次
+每一次失败的成本
+据说都是5000万美元起跳
+
+Upsot Nat Sound 自然声
+C0041.MXF
+01:45:10:00 - 01:45:18:12
+
+VO 旁白 Studio
+但马斯克说他们不会放弃
+失败是通向成功的必经之路`;
+    analyze();
+  };
+
+  el.btnClear.onclick = () => {
+    el.input.innerHTML = '';
+    shots = [];
+    voSegments = [];
+    selectedRow = -1;
+    el.shotBody.innerHTML = '';
+    el.filesBody.innerHTML = '';
+    el.voBody.innerHTML = '';
+    el.emptyState.style.display = 'flex';
+    el.shotTable.style.display = 'none';
+    el.voEmptyState.style.display = 'block';
+    el.errMsg.textContent = '';
+    el.statusbar.textContent = 'Ready — paste content to begin';
+    updateKPIs();
+    updateVOSummary();
+  };
+
+  // ── Auto-analyze on input ────────────────────────────────────────────────────
+  let debounce;
+  el.input.addEventListener('input', () => {
+    clearTimeout(debounce);
+    debounce = setTimeout(analyze, 200);
+  });
+  [el.fps, el.pairing].forEach(s => s.addEventListener('change', analyze));
+
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+  function xmlEsc(s) {
+    return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+  }
+  function escHtml(s) {
+    return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function download(content, filename, type) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([content], { type }));
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
 })();
 </script>
 </body>
