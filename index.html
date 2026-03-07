@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Timecode Calculator</title>
+<title>Shot List Generator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet"/>
@@ -645,8 +645,8 @@
   <div class="logo">
     <div class="logo-icon">TC</div>
     <div>
-      <div class="logo-text">Timecode Calculator</div>
-      <div class="logo-ver">version 15</div>
+      <div class="logo-text">Shot List Generator</div>
+      <div class="logo-ver">Timecode Calculator v14</div>
     </div>
   </div>
   <div class="header-actions">
@@ -751,7 +751,7 @@
         </button>
         <button class="btn success" id="btnXML">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Export Marker XML
+          Export Sequence XML
         </button>
       </div>
     </div>
@@ -852,6 +852,10 @@
             <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.2"/><path d="M6 3.5v2.5l1.5 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
             Estimate All
           </button>
+          <button class="btn-guide-ai" id="btnApplyAll" style="background:linear-gradient(135deg,#0e2a18,#1a4a28);border-color:#2a7a44;color:#4de88a" title="Apply all estimates to empty duration fields">
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Apply All
+          </button>
           <span style="font-size:10px;color:#4a3060;font-family:var(--mono)">+15% pacing buffer</span>
         </div>
         <table class="files-table" id="voTable">
@@ -872,6 +876,34 @@
           <div style="font-size:11px;line-height:1.7">Label lines with <code style="background:#1a1535;color:#b87fff;padding:1px 5px;border-radius:3px">VO:</code>, <code style="background:#1a1535;color:#b87fff;padding:1px 5px;border-radius:3px">V.O.</code>, or <code style="background:#1a1535;color:#b87fff;padding:1px 5px;border-radius:3px">VO —</code> in your pasted table, without timecodes.</div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Reel Start TC Modal -->
+<div id="reelModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:#0e1117;border:1px solid #1e2d45;border-radius:10px;padding:28px 32px;min-width:520px;max-width:640px;max-height:80vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.7)">
+    <div style="font-size:14px;font-weight:600;color:#c8d8f0;margin-bottom:8px">Source File Start Timecode</div>
+    <div style="font-size:11px;color:#4a6580;line-height:1.7;margin-bottom:6px;padding:10px 12px;background:#070c12;border:1px solid #1a2535;border-radius:6px">
+      <strong style="color:#8ab0d0">What to enter:</strong> the TC shown at the very first frame of the file in Premiere or your camera app — not your shot's in-point.<br>
+      <strong style="color:#8ab0d0">Leave blank</strong> if the file starts at <code style="background:#1a1535;color:#b87fff;padding:1px 4px;border-radius:3px">00:00:00:00</code> (no offset needed).<br>
+      <strong style="color:#8ab0d0">Common value:</strong> <code style="background:#1a1535;color:#b87fff;padding:1px 4px;border-radius:3px">01:00:00:00</code> for camera cards that start each reel at 1 hour.
+    </div>
+    <div style="font-size:10px;color:#2d4a62;margin-bottom:16px;padding:0 2px">Premiere subtracts this offset from each clip's source frame number so <code style="background:#1a1535;color:#6a8aaf;padding:1px 3px;border-radius:2px">&lt;in&gt;</code>/<code style="background:#1a1535;color:#6a8aaf;padding:1px 3px;border-radius:2px">&lt;out&gt;</code> land on the correct source TC after relinking.</div>
+    <table style="width:100%;border-collapse:collapse" id="reelTable">
+      <thead>
+        <tr>
+          <th style="text-align:left;font-size:10px;color:#2d4a62;padding:0 0 8px;font-weight:500;letter-spacing:.06em;font-family:var(--mono)">FILENAME</th>
+          <th style="text-align:left;font-size:10px;color:#2d4a62;padding:0 0 8px;font-weight:500;letter-spacing:.06em;font-family:var(--mono)">FILE START TC <span style="color:#1e3a52;font-weight:400">(blank = 00:00:00:00)</span></th>
+          <th style="text-align:left;font-size:10px;color:#2d4a62;padding:0 0 8px;font-weight:500;letter-spacing:.06em;font-family:var(--mono)">FIRST SHOT IN</th>
+        </tr>
+      </thead>
+      <tbody id="reelBody"></tbody>
+    </table>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:24px">
+      <button id="reelCancel" style="padding:7px 18px;background:transparent;border:1px solid #1e2d45;border-radius:6px;color:#5a7090;font-size:12px;cursor:pointer">Cancel</button>
+      <button id="reelExport" style="padding:7px 18px;background:linear-gradient(135deg,#0a2a1a,#1a4a30);border:1px solid #2a7a44;border-radius:6px;color:#4de88a;font-size:12px;cursor:pointer;font-weight:600">Export XML</button>
     </div>
   </div>
 </div>
@@ -971,67 +1003,90 @@
     return { timebase: Math.round(fps), ntsc: 'FALSE', fps };
   }
 
+  // ── Timecode ↔ frame number ────────────────────────────────────────────────
+  // Drop-frame applies to 29.97 (tb=30, df=2) and 59.94 (tb=60, df=4).
+  // SMPTE forward: subtract dropped-frame count from naive multiply.
+  // SMPTE reverse: minute-0 of each 10-min block is full (no drops);
+  //                minutes 1-9 each lose df frames at :00 and :01.
+
   function tcToFrames_HMS(match) {
     const [full, h, m, s, sep, sub] = match;
-    const { timebase } = getTimebaseInfo();
-    const base = (parseInt(h,10)*3600 + parseInt(m,10)*60 + parseInt(s,10)) * timebase;
-    if (sep === ':') return { text: full, frames: base + parseInt(sub||'0',10) };
+    const { timebase, ntsc } = getTimebaseInfo();
+    const hh = parseInt(h,10), mm = parseInt(m,10), ss = parseInt(s,10);
+
     if (sep === '.') {
-      const ms = parseInt(String(sub||'').padEnd(3,'0').slice(0,3),10);
-      return { text: full, frames: Math.round(((parseInt(h,10)*3600+parseInt(m,10)*60+parseInt(s,10)) + ms/1000) * timebase) };
+      // Millisecond sub-second — non-drop wall-clock
+      const ms = parseInt(String(sub||'').padEnd(3,'0').slice(0,3), 10);
+      return { text: full, frames: Math.round((hh*3600 + mm*60 + ss + ms/1000) * timebase) };
     }
-    return { text: full, frames: base };
-  }
 
-  function tcToFrames_MS(match) {
-    const [full, mm, ss, mmm] = match;
-    const { timebase } = getTimebaseInfo();
-    let secs = parseInt(mm,10)*60 + parseInt(ss,10);
-    if (mmm != null) secs += parseInt(String(mmm||'').padEnd(3,'0').slice(0,3),10) / 1000;
-    return { text: full, frames: Math.round(secs * timebase) };
-  }
+    const ff = parseInt(sub || '0', 10);
 
-  function findTimecodes(text) {
-    const t = cleanText(text);
-    const candidates = [], occupied = [];
-    let m;
-    HMS_RE.lastIndex = 0;
-    while ((m = HMS_RE.exec(t))) {
-      candidates.push({ idx: m.index, tc: tcToFrames_HMS(m) });
-      occupied.push([m.index, m.index + m[0].length]);
+    if (ntsc === 'TRUE' && (timebase === 30 || timebase === 60)) {
+      const df = Math.round(timebase * 0.066666); // 2 for 30DF, 4 for 60DF
+      const totalMins = 60 * hh + mm;
+      const frames = timebase*3600*hh + timebase*60*mm + timebase*ss + ff
+                   - df * (totalMins - Math.floor(totalMins / 10));
+      return { text: full, frames };
     }
-    MS_RE.lastIndex = 0;
-    while ((m = MS_RE.exec(t))) {
-      const [s, e] = [m.index, m.index + m[0].length];
-      if (!occupied.some(([a,b]) => s < b && e > a))
-        candidates.push({ idx: s, tc: tcToFrames_MS(m) });
-    }
-    return candidates.sort((a,b) => a.idx-b.idx).map(x => x.tc);
-  }
 
-  function framesToHMSms(frames) {
-    const { timebase } = getTimebaseInfo();
-    const ms = Math.round(frames * 1000 / timebase);
-    const sign = ms < 0 ? '-' : '';
-    let t = Math.abs(ms);
-    const h = Math.floor(t/3600000); t %= 3600000;
-    const mn = Math.floor(t/60000); t %= 60000;
-    const s = Math.floor(t/1000);
-    const r = Math.floor(t % 1000);
-    return sign + pad2(h) + ':' + pad2(mn) + ':' + pad2(s) + '.' + String(r).padStart(3,'0');
+    return { text: full, frames: (hh*3600 + mm*60 + ss) * timebase + ff };
   }
 
   function framesToTCString(frames) {
-    const { timebase } = getTimebaseInfo();
+    const { timebase, ntsc } = getTimebaseInfo();
+
+    if (ntsc === 'TRUE' && (timebase === 30 || timebase === 60)) {
+      const df   = Math.round(timebase * 0.066666);
+      const fp10 = timebase * 600 - df * 9; // frames per 10-min block
+      const fp0  = timebase * 60;            // frames in minute-0 (no drops)
+      const fp1  = timebase * 60 - df;       // frames in minutes 1-9
+
+      const tens = Math.floor(frames / fp10);
+      const rem  = frames % fp10;
+
+      let mig, ff, ss;
+      if (rem < fp0) {
+        mig = 0;
+        ff  = rem % timebase;
+        ss  = Math.floor(rem / timebase);
+      } else {
+        const rem2 = rem - fp0;
+        mig = Math.floor(rem2 / fp1) + 1;
+        const left = rem2 % fp1;
+        ff  = (left + df) % timebase;
+        ss  = Math.floor((left + df) / timebase);
+      }
+
+      const totalMin = tens * 10 + mig;
+      const mm = totalMin % 60;
+      const hh = Math.floor(totalMin / 60);
+      return pad2(hh)+';'+pad2(mm)+';'+pad2(ss)+';'+pad2(ff);
+    }
+
     const totalSec = Math.floor(frames / timebase);
     const ff = frames % timebase;
-    const h = Math.floor(totalSec/3600);
-    const m = Math.floor((totalSec%3600)/60);
-    const s = totalSec % 60;
-    return pad2(h)+':'+pad2(m)+':'+pad2(s)+':'+pad2(ff);
+    const h  = Math.floor(totalSec / 3600);
+    const mn = Math.floor((totalSec % 3600) / 60);
+    const s  = totalSec % 60;
+    return pad2(h)+':'+pad2(mn)+':'+pad2(s)+':'+pad2(ff);
   }
 
+
   function pad2(n) { return String(n).padStart(2,'0'); }
+
+  // Formats frames as HH:MM:SS.mmm (for duration display, not TC)
+  function framesToHMSms(frames) {
+    const { timebase } = getTimebaseInfo();
+    const ms  = Math.round(frames * 1000 / timebase);
+    const sign = ms < 0 ? '-' : '';
+    let t = Math.abs(ms);
+    const h  = Math.floor(t / 3600000); t %= 3600000;
+    const mn = Math.floor(t / 60000);   t %= 60000;
+    const s  = Math.floor(t / 1000);
+    const r  = t % 1000;
+    return sign + pad2(h) + ':' + pad2(mn) + ':' + pad2(s) + '.' + String(r).padStart(3,'0');
+  }
 
   // ── Filename Detection ──────────────────────────────────────────────────────
   const ANY_FN_RE = /\b([A-Za-z0-9][A-Za-z0-9._-]*\.[A-Za-z0-9]{2,6})\b/g;
@@ -1055,40 +1110,88 @@
     return list.find(x => x.preferred) || list[0];
   }
 
-  // ── Master Block Parser ──────────────────────────────────────────────────────
-  // Flattens ALL input (tables or plain text) into a single line array,
-  // then does one top-down pass grouping lines under their section tag.
-  // Returns: { shots: [...], voSegments: [...] }
-  //
-  // A "block" starts when a tag line is encountered.
-  //   • VO tag  → accumulate script lines until next tag → one voSegment
-  //   • Shot tag → accumulate filename + TC lines until next tag → one or more shots
-  //   • No tag yet (pre-amble) → treated as shot block (legacy behaviour)
-
-  function getAllLines(root) {
-    const lines = [];
-    const tables = root.querySelectorAll('table');
-    if (tables.length) {
-      // Each table cell becomes its own mini-block of lines
-      tables.forEach(tbl => tbl.querySelectorAll('tr').forEach(tr =>
-        tr.querySelectorAll('th,td').forEach(td => {
-          const cellLines = (td.innerText || '').split(/\r?\n/).map(l => cleanText(l).trim()).filter(Boolean);
-          lines.push(...cellLines);
-        })
-      ));
-    } else {
-      const text = root.innerText || '';
-      cleanText(text).split(/\r?\n/).map(l => l.trim()).filter(Boolean).forEach(l => lines.push(l));
-    }
-    return lines;
+  // ── Strikethrough detection ────────────────────────────────────────────────
+  function isStruckNode(node) {
+    if (node.nodeType !== 1) return false;
+    const tag = node.tagName.toLowerCase();
+    if (tag === 's' || tag === 'strike' || tag === 'del') return true;
+    const style = node.getAttribute('style') || '';
+    return /line-through/i.test(style);
   }
 
+  // ── DOM line extractor (preserves strikethrough per line) ────────────────────
+  // Walks the paste DOM and returns [{text, struck}] for every non-empty line.
+  function collectLines(root) {
+    const result = [];
+    let buf = '', bufStruck = false;
+
+    function flush() {
+      const t = cleanText(buf).trim();
+      if (t) result.push({ text: t, struck: bufStruck });
+      buf = ''; bufStruck = false;
+    }
+
+    function walk(node, inheritStruck) {
+      if (node.nodeType === 3) {
+        buf += node.textContent;
+        if (inheritStruck) bufStruck = true;
+        return;
+      }
+      if (node.nodeType !== 1) return;
+      const tag   = node.tagName.toLowerCase();
+      const struck = inheritStruck || isStruckNode(node);
+      if (tag === 'br') { flush(); return; }
+      const isBlock = /^(div|p|tr|li|h[1-6]|blockquote|section|article|pre)$/.test(tag);
+      if (isBlock && buf.trim()) flush();
+      if (tag === 'td' || tag === 'th') {
+        for (const child of node.childNodes) walk(child, struck);
+        flush();
+        return;
+      }
+      for (const child of node.childNodes) walk(child, struck);
+      if (isBlock && buf.trim()) flush();
+    }
+
+    walk(root, false);
+    flush();
+    return result.filter(l => l.text.length > 0);
+  }
+
+  function getAllLines(root) {
+    return collectLines(root).map(l => l.text);
+  }
+
+  // ── findTimecodes ────────────────────────────────────────────────────────────
+  function tcToFrames_MS(match) {
+    const [full, mm, ss, mmm] = match;
+    const { timebase } = getTimebaseInfo();
+    let secs = parseInt(mm, 10) * 60 + parseInt(ss, 10);
+    if (mmm != null) secs += parseInt(String(mmm || '').padEnd(3, '0').slice(0, 3), 10) / 1000;
+    return { text: full, frames: Math.round(secs * timebase) };
+  }
+
+  function findTimecodes(text) {
+    const t = cleanText(text);
+    const candidates = [], occupied = [];
+    let m;
+    HMS_RE.lastIndex = 0;
+    while ((m = HMS_RE.exec(t))) {
+      candidates.push({ idx: m.index, tc: tcToFrames_HMS(m) });
+      occupied.push([m.index, m.index + m[0].length]);
+    }
+    MS_RE.lastIndex = 0;
+    while ((m = MS_RE.exec(t))) {
+      const [s, e] = [m.index, m.index + m[0].length];
+      if (!occupied.some(([a, b]) => s < b && e > a))
+        candidates.push({ idx: s, tc: tcToFrames_MS(m) });
+    }
+    return candidates.sort((a, b) => a.idx - b.idx).map(x => x.tc);
+  }
+
+  // ── Master Block Parser ──────────────────────────────────────────────────────
   function parseAllBlocks(root) {
     const lines = collectLines(root); // [{text, struck}]
-    const newShots = [];
-    const newVOs = [];
-
-    // Group into blocks: [{tag, tagStruck, isVO, lines:[{text,struck}]}]
+    const newShots = [], newVOs = [];
     const blocks = [];
     let current = null;
 
@@ -1103,37 +1206,26 @@
     }
     if (current) blocks.push(current);
 
-    // Process each block
     for (const block of blocks) {
-      // If the tag line itself is struck, the whole block is struck
       const blockStruck = block.tagStruck;
-
       if (block.isVO) {
         const scriptLines = block.lines.filter(l => {
           const tcs = findTimecodes(l.text);
           const fns = findFilenames(l.text);
-          const hasVideo = fns.some(f => f.preferred);
-          return tcs.length === 0 && !hasVideo;
+          return tcs.length === 0 && !fns.some(f => f.preferred);
         });
         if (scriptLines.length > 0 || block.tag) {
-          const label = block.tag ? cleanText(block.tag).trim() : 'VO';
-          const script = scriptLines.map(l => l.text).join(' / ');
-          // VO is struck if tag is struck OR all script lines are struck
+          const label   = block.tag ? cleanText(block.tag).trim() : 'VO';
+          const script  = scriptLines.map(l => l.text).join(' / ');
           const voStruck = blockStruck || (scriptLines.length > 0 && scriptLines.every(l => l.struck));
           newVOs.push({ label, script, struck: voStruck, durFrames: 0, durInput: '', notes: '' });
         }
       } else {
-        // Shot block: extract filename + TC pairs
         let currentFn = null;
         for (const line of block.lines) {
-          // A shot line is struck if the block tag is struck, or the line itself is struck
           const lineStruck = blockStruck || line.struck;
-
           const fns = findFilenames(line.text);
-          if (fns.length) {
-            const pref = choosePrimary(fns);
-            if (pref) currentFn = pref;
-          }
+          if (fns.length) { const pref = choosePrimary(fns); if (pref) currentFn = pref; }
           const tcs = findTimecodes(line.text);
           if (tcs.length >= 2) {
             for (let i = 0; i < tcs.length - 1; i += 2) {
@@ -1141,7 +1233,7 @@
               if (dur <= 0) continue;
               newShots.push({
                 sectionTag: block.tag || '',
-                filename:   currentFn?.fn || '(unlabeled)',
+                filename:   currentFn?.fn  || '(unlabeled)',
                 ext:        currentFn?.ext || '',
                 inText:  tcs[i].text,   inFrames:  tcs[i].frames,
                 outText: tcs[i+1].text, outFrames: tcs[i+1].frames,
@@ -1154,81 +1246,10 @@
         }
       }
     }
-
     return { newShots, newVOs };
   }
 
   function getAllCells(root) {
-    // Legacy helper kept for status bar count
-    return collectLines(root).map(l => l.text);
-  }
-
-  // ── DOM Line Extractor (preserves strikethrough metadata) ───────────────────
-  // Walks the DOM and returns [{text, struck}] for every non-empty line.
-  // A line is "struck" if it (or any ancestor) has strikethrough formatting.
-
-  function isStruckNode(node) {
-    if (node.nodeType !== 1) return false;
-    const tag = node.tagName.toLowerCase();
-    if (tag === 's' || tag === 'strike' || tag === 'del') return true;
-    const style = node.getAttribute('style') || '';
-    if (/line-through/i.test(style)) return true;
-    // Google Docs / Word inline span with text-decoration
-    try {
-      const cs = window.getComputedStyle ? null : null; // skip computed (too slow)
-      void cs;
-    } catch(e) {}
-    return false;
-  }
-
-  function collectLines(root) {
-    // Result: [{text: string, struck: boolean}]
-    const result = [];
-    let buf = '';
-    let bufStruck = false;
-
-    function flush() {
-      const t = cleanText(buf).trim();
-      if (t) result.push({ text: t, struck: bufStruck });
-      buf = '';
-      bufStruck = false;
-    }
-
-    function walk(node, inheritStruck) {
-      if (node.nodeType === 3) { // text node
-        buf += node.textContent;
-        if (inheritStruck) bufStruck = true;
-        return;
-      }
-      if (node.nodeType !== 1) return;
-
-      const tag = node.tagName.toLowerCase();
-      const struck = inheritStruck || isStruckNode(node);
-
-      // Block-level elements → flush current line first
-      const isBlock = /^(div|p|br|tr|li|h[1-6]|blockquote|section|article|pre)$/.test(tag);
-      if (tag === 'br') { flush(); return; }
-      if (isBlock && buf.trim()) flush();
-
-      // Table cells: walk children then flush
-      if (tag === 'td' || tag === 'th') {
-        for (const child of node.childNodes) walk(child, struck);
-        flush();
-        return;
-      }
-
-      for (const child of node.childNodes) walk(child, struck);
-
-      if (isBlock && buf.trim()) flush();
-    }
-
-    walk(root, false);
-    flush();
-    return result.filter(l => l.text.length > 0);
-  }
-
-  function getAllLines(root) {
-    // Plain text lines for status bar — kept simple
     return collectLines(root).map(l => l.text);
   }
 
@@ -1462,6 +1483,23 @@
   document.getElementById('rateEn').addEventListener('change', () => { if (guideVisible) runLocalEstimates(); });
   document.getElementById('btnEstimateAll').addEventListener('click', runLocalEstimates);
 
+  document.getElementById('btnApplyAll').addEventListener('click', () => {
+    // Auto-run estimates first if any active VO is missing one
+    const needsEstimate = voSegments.some(vo => !vo.struck && vo.script && vo._estStr == null);
+    if (needsEstimate) runLocalEstimates();
+
+    let applied = 0;
+    voSegments.forEach((vo, i) => {
+      if (vo.struck || !vo._estStr) return;
+      applyEstimate(i, vo._estStr);
+      applied++;
+    });
+    const btn = document.getElementById('btnApplyAll');
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Applied ${applied}`;
+    setTimeout(() => { btn.innerHTML = orig; }, 1800);
+  });
+
   // Language classifier: counts CJK characters and English word tokens separately
   function detectLangComposition(text) {
     const cjkRe   = /[\u4E00-\u9FFF\u3400-\u4DBF\uF900-\uFAFF]/g;
@@ -1635,43 +1673,191 @@
     download(csv, (el.seqName.value || 'shotlist').replace(/[^\w-]+/g,'_') + '_shotlist.csv', 'text/csv');
   };
 
-  // ── Export XML ───────────────────────────────────────────────────────────────
+  // ── Export XML (FCP7 / Premiere Pro) ────────────────────────────────────────
+  // Follows the exact FCP7 XML schema Premiere Pro expects for sequence import.
+  // Key rules:
+  //   - <file> full definition goes INSIDE the first clipitem that references it
+  //   - Subsequent clipitems referencing the same file use <file id="..."/> only
+  //   - <pathurl> must be file:// URI (or bare filename — Premiere will relink)
+  //   - <duration> on <file> must be set (use a large sentinel if unknown)
+  //   - No <!DOCTYPE> declaration — Premiere's parser rejects unknown DTDs
+  //   - <name> tag used for clips; <n> used for project/sequence/bin level
+  // Persist reel-start TCs across modal opens (filename → TC string)
+  const reelStartTCs = new Map();
+
   el.btnXML.onclick = () => {
-    if (!shots.length && !voSegments.length) { el.errMsg.textContent = 'No shots to export.'; return; }
+    const activeShots = shots.filter(s => !s.struck);
+    if (!activeShots.length) { el.errMsg.textContent = 'No active shots to export.'; return; }
+
+    // Collect unique filenames → build modal rows
+    // For each file, find the first shot's in-point TC as a reference hint.
+    const uniqueFiles = [...new Set(activeShots.map(s => s.filename))];
+    const firstShot   = new Map(); // filename → first shot object
+    activeShots.forEach(s => { if (!firstShot.has(s.filename)) firstShot.set(s.filename, s); });
+
+    const tbody = document.getElementById('reelBody');
+    tbody.innerHTML = uniqueFiles.map(fn => {
+      const saved    = reelStartTCs.get(fn) || '';  // blank = no offset
+      const firstIn  = firstShot.get(fn)?.inText || '';
+      return `<tr>
+        <td style="padding:7px 0;font-family:var(--mono);font-size:12px;color:#8ab0d0;padding-right:20px;white-space:nowrap">${fn}</td>
+        <td style="padding:7px 0;padding-right:20px">
+          <input data-file="${fn}" type="text" value="${saved}"
+            style="background:#070c12;border:1px solid #1e2d45;border-radius:5px;color:#c8d8f0;font-family:var(--mono);font-size:12px;padding:5px 9px;width:150px"
+            placeholder="00:00:00:00"/>
+        </td>
+        <td style="padding:7px 0;font-family:var(--mono);font-size:11px;color:#2d5a40">${firstIn}</td>
+      </tr>`;
+    }).join('');
+    const modal = document.getElementById('reelModal');
+    modal.style.display = 'flex';
+
+    document.getElementById('reelCancel').onclick = () => { modal.style.display = 'none'; };
+
+    document.getElementById('reelExport').onclick = () => {
+      // Save entered values
+      tbody.querySelectorAll('input[data-file]').forEach(inp => {
+        reelStartTCs.set(inp.dataset.file, inp.value.trim()); // blank = no offset
+      });
+      modal.style.display = 'none';
+      doExportXML(activeShots);
+    };
+  };
+
+  function doExportXML(activeShots) {
     const { timebase, ntsc } = getTimebaseInfo();
-
-    let tlFrames = 0;
-    const markers = shots.filter(s => !s.struck).map((s, i) => {
-      const start = tlFrames;
-      const end = start + s.durFrames;
-      tlFrames = end;
-      const name = `${String(i+1).padStart(3,'0')} ${s.filename}`;
-      const comment = `SRC ${s.inText} → ${s.outText}${s.notes ? ' | ' + s.notes : ''}`;
-      return { name, start, end, comment };
-    });
-
-    // VO markers appended after shots (as placeholder ranges)
-    voSegments.filter(v => !v.struck).forEach((v, i) => {
-      if (!v.durFrames) return;
-      const start = tlFrames;
-      const end = start + v.durFrames;
-      tlFrames = end;
-      const name = `VO-${String(i+1).padStart(2,'0')} ${v.label.slice(0, 40)}`;
-      const comment = `VOICE OVER | ${v.durFrames} fr${v.notes ? ' | ' + v.notes : ''}`;
-      markers.push({ name, start, end, comment });
-    });
-
-    const seqDuration = tlFrames || 1;
-    const displayformat = (ntsc === 'TRUE' && timebase === 30) ? 'DF' : 'NDF';
-    const seqName = el.seqName.value || 'Shot List Export';
+    const seqName  = el.seqName.value    || 'Shot List Export';
     const seqStart = el.seqStartTc.value || '00:00:00:00';
+    const dfmt     = (ntsc === 'TRUE' && timebase === 30) ? 'DF' : 'NDF';
 
-    const markerXml = markers.map(m => `        <marker>
-          <comment>${xmlEsc(m.comment)}</comment>
-          <n>${xmlEsc(m.name)}</n>
-          <in>${m.start}</in>
-          <out>${m.end}</out>
-        </marker>`).join('\n');
+    // Parse reel-start TCs into frame offsets to subtract from in/out
+    const reelOffset = new Map(); // filename → frame offset
+    reelStartTCs.forEach((tcStr, fn) => {
+      const off = tcStr ? tcStrToFrames(tcStr) : 0;
+      reelOffset.set(fn, off);
+    });
+
+    // Inline helper — rate block used throughout
+    const rate = () => `<rate><timebase>${timebase}</timebase><ntsc>${ntsc}</ntsc></rate>`;
+
+    // Track which file ids have already been fully declared
+    const fileSeen  = new Set();
+    const fileIdMap = new Map(); // filename → xml id
+
+    activeShots.forEach(s => {
+      if (!fileIdMap.has(s.filename)) {
+        fileIdMap.set(s.filename, `file-${fileIdMap.size + 1}`);
+      }
+    });
+
+    // Build video clipitems — file definition is inlined on first use per filename.
+    // <in>/<out> are frame offsets from the file's own reel-start TC (i.e. inFrames - reelOffset).
+    // The <file><timecode> must declare that same reel-start so Premiere resolves
+    // frame 0 of the file to the correct display TC.
+    //
+    // When no reel offset is set (offset=0, TC=00:00:00:00): <in>/<out> equal the
+    // absolute frame numbers and the file timecode declares frame 0 = 00:00:00:00.
+    // Premiere then displays the correct source TC directly.
+
+    // Pre-compute per-file reel start TC string (needed for <file> timecode block)
+    const fileReelTC = new Map(); // filename → TC string for file timecode
+    activeShots.forEach(s => {
+      if (!fileReelTC.has(s.filename)) {
+        const off = reelOffset.get(s.filename) || 0;
+        fileReelTC.set(s.filename, off > 0 ? framesToTCString(off) : '00:00:00:00');
+      }
+    });
+
+    let tlV = 0;
+    const videoItems = activeShots.map((s, i) => {
+      const tlIn = tlV, tlOut = tlV + s.durFrames;
+      tlV = tlOut;
+      const fid    = fileIdMap.get(s.filename);
+      const isNew  = !fileSeen.has(fid);
+      if (isNew) fileSeen.add(fid);
+      const offset = reelOffset.get(s.filename) || 0;
+      const clipIn  = s.inFrames  - offset;
+      const clipOut = s.outFrames - offset;
+      const reelTC  = fileReelTC.get(s.filename);
+
+      const fileBlock = isNew ? `
+                <file id="${fid}">
+                  <n>${xmlEsc(s.filename)}</n>
+                  ${rate()}
+                  <duration>86400</duration>
+                  <pathurl>${xmlEsc(s.filename)}</pathurl>
+                  <timecode>
+                    ${rate()}
+                    <string>${reelTC}</string>
+                    <frame>${offset}</frame>
+                    <displayformat>${dfmt}</displayformat>
+                  </timecode>
+                  <media>
+                    <video>
+                      <samplecharacteristics>
+                        ${rate()}
+                        <width>1920</width>
+                        <height>1080</height>
+                        <pixelaspectratio>square</pixelaspectratio>
+                        <fielddominance>none</fielddominance>
+                      </samplecharacteristics>
+                    </video>
+                    <audio>
+                      <channelcount>2</channelcount>
+                      <samplecharacteristics>
+                        <depth>16</depth>
+                        <samplerate>48000</samplerate>
+                      </samplecharacteristics>
+                    </audio>
+                  </media>
+                </file>` : `<file id="${fid}"/>`
+
+      return `
+              <clipitem id="clipitem-${i + 1}">
+                <name>${xmlEsc(s.filename)}</name>
+                <enabled>TRUE</enabled>
+                <duration>${s.durFrames}</duration>
+                ${rate()}
+                <start>${tlIn}</start>
+                <end>${tlOut}</end>
+                <in>${clipIn}</in>
+                <out>${clipOut}</out>
+                ${fileBlock}
+                <sourcetrack>
+                  <mediatype>video</mediatype>
+                  <trackindex>1</trackindex>
+                </sourcetrack>
+              </clipitem>`;
+    }).join('\n');
+
+    // Two audio tracks (L=ch1, R=ch2) matching stereo source files.
+    // Premiere requires one track per channel with matching trackindex.
+    const buildAudioTrack = (chIdx) => {
+      let tlA = 0;
+      return activeShots.map((s, i) => {
+        const tlIn = tlA, tlOut = tlA + s.durFrames;
+        tlA = tlOut;
+        const fid = fileIdMap.get(s.filename);
+        return `
+              <clipitem id="a${chIdx}-${i + 1}">
+                <n>${xmlEsc(s.filename)}</n>
+                <enabled>TRUE</enabled>
+                <duration>${s.durFrames}</duration>
+                ${rate()}
+                <start>${tlIn}</start>
+                <end>${tlOut}</end>
+                <in>${s.inFrames - (reelOffset.get(s.filename)||0)}</in>
+                <out>${s.outFrames - (reelOffset.get(s.filename)||0)}</out>
+                <file id="${fid}"/>
+                <sourcetrack>
+                  <mediatype>audio</mediatype>
+                  <trackindex>${chIdx}</trackindex>
+                </sourcetrack>
+              </clipitem>`;
+      }).join('\n');
+    };
+
+    const seqDur = tlV || 1;
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <xmeml version="5">
@@ -1680,40 +1866,79 @@
     <children>
       <sequence id="sequence-1">
         <n>${xmlEsc(seqName)}</n>
-        <duration>${seqDuration}</duration>
-        <rate>
-          <timebase>${timebase}</timebase>
-          <ntsc>${ntsc}</ntsc>
-        </rate>
+        <duration>${seqDur}</duration>
+        ${rate()}
         <timecode>
-          <rate><timebase>${timebase}</timebase><ntsc>${ntsc}</ntsc></rate>
+          ${rate()}
           <string>${xmlEsc(seqStart)}</string>
           <frame>0</frame>
-          <displayformat>${displayformat}</displayformat>
+          <displayformat>${dfmt}</displayformat>
         </timecode>
-${markerXml}
         <media>
           <video>
             <format>
               <samplecharacteristics>
-                <width>1920</width><height>1080</height>
+                ${rate()}
+                <width>1920</width>
+                <height>1080</height>
                 <pixelaspectratio>square</pixelaspectratio>
                 <fielddominance>none</fielddominance>
-                <rate><timebase>${timebase}</timebase><ntsc>${ntsc}</ntsc></rate>
               </samplecharacteristics>
             </format>
+            <track>
+              <enabled>TRUE</enabled>
+              <locked>FALSE</locked>
+              ${videoItems}
+            </track>
           </video>
+          <audio>
+            <numOutputChannels>2</numOutputChannels>
+            <format>
+              <samplecharacteristics>
+                <depth>16</depth>
+                <samplerate>48000</samplerate>
+              </samplecharacteristics>
+            </format>
+            <track>
+              <enabled>TRUE</enabled>
+              <locked>FALSE</locked>
+              <outputchannelindex>1</outputchannelindex>
+              ${buildAudioTrack(1)}
+            </track>
+            <track>
+              <enabled>TRUE</enabled>
+              <locked>FALSE</locked>
+              <outputchannelindex>2</outputchannelindex>
+              ${buildAudioTrack(2)}
+            </track>
+          </audio>
         </media>
       </sequence>
     </children>
   </project>
 </xmeml>`;
 
-    download(xml, seqName.replace(/[^\w-]+/g,'_') + '_markers.xml', 'application/xml');
+    download(xml, seqName.replace(/[^\w-]+/g, '_') + '_sequence.xml', 'application/xml');
     el.errMsg.textContent = '';
-    el.statusbar.textContent = 'Exported marker XML. In Premiere: File → Import → select .xml';
-    setTimeout(() => el.statusbar.textContent = `Shots: ${shots.length}`, 3000);
-  };
+    el.statusbar.textContent = `✓ Exported ${activeShots.length}-clip sequence — File → Import in Premiere Pro, then relink media`;
+    setTimeout(() => el.statusbar.textContent = `Shots: ${activeShots.length}`, 6000);
+  }
+
+  // Parse a TC string (HH:MM:SS:FF or HH;MM;SS;FF) to frame count using current fps settings
+  function tcStrToFrames(str) {
+    const clean = (str || '').trim().replace(/;/g, ':');
+    const m = clean.match(/^(\d{1,2}):(\d{2}):(\d{2}):(\d{2})$/);
+    if (!m) return 0;
+    const [, h, mn, s, f] = m.map(Number);
+    const { timebase, ntsc } = getTimebaseInfo();
+    if (ntsc === 'TRUE' && (timebase === 30 || timebase === 60)) {
+      const df = Math.round(timebase * 0.066666);
+      const totalMins = 60 * h + mn;
+      return timebase*3600*h + timebase*60*mn + timebase*s + f
+           - df * (totalMins - Math.floor(totalMins / 10));
+    }
+    return (h*3600 + mn*60 + s) * timebase + f;
+  }
 
   // ── Tabs ─────────────────────────────────────────────────────────────────────
   document.querySelectorAll('.tab').forEach(tab => {
