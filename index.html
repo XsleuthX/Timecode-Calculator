@@ -118,7 +118,7 @@
   /* LAYOUT */
   .workspace {
     display: grid;
-    grid-template-columns: 340px 1fr;
+    grid-template-columns: 340px 220px minmax(0, 1fr);
     height: calc(100vh - 53px);
   }
 
@@ -129,12 +129,20 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    min-width: 0;
+  }
+  .sidebar.summary-sidebar {
+    background: linear-gradient(180deg, #10141d 0%, #0c1017 100%);
   }
   .sidebar-section {
     padding: 16px;
     border-bottom: 1px solid var(--border);
   }
   .sidebar-section:last-child { border-bottom: none; flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+  .summary-sidebar .sidebar-section:last-child {
+    flex: 0 0 auto;
+    overflow: visible;
+  }
   .section-label {
     font-size: 10px;
     font-weight: 600;
@@ -216,6 +224,22 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 6px;
+  }
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .summary-sidebar .sidebar-section {
+    padding: 18px 16px;
+  }
+  .summary-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .summary-note {
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--muted);
   }
   .kpi-tile {
     background: var(--bg);
@@ -632,10 +656,19 @@
     z-index: 999;
   }
 
+  @media (max-width: 1180px) {
+    .workspace { grid-template-columns: 320px 190px minmax(0, 1fr); }
+  }
+
   @media (max-width: 900px) {
-    .workspace { grid-template-columns: 1fr; grid-template-rows: auto 1fr; height: auto; }
+    .workspace { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr; height: auto; }
     .sidebar { border-right: none; border-bottom: 1px solid var(--border); height: auto; overflow: visible; }
+    .summary-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
     .main-panel { height: 70vh; }
+  }
+
+  @media (max-width: 640px) {
+    .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
   }
 </style>
 </head>
@@ -706,29 +739,34 @@
       </div>
     </div>
 
+    <div class="statusbar" id="statusbar">Ready — paste content to begin</div>
+  </aside>
+
+  <aside class="sidebar summary-sidebar">
     <div class="sidebar-section">
       <div class="section-label">Summary</div>
-      <div class="kpi-strip" style="grid-template-columns:repeat(4,1fr)">
-        <div class="kpi-tile">
-          <div class="kv" id="kShots">0</div>
-          <div class="kl">Shots</div>
+      <div class="summary-stack">
+        <div class="kpi-strip summary-grid">
+          <div class="kpi-tile">
+            <div class="kv" id="kShots">0</div>
+            <div class="kl">Shots</div>
+          </div>
+          <div class="kpi-tile">
+            <div class="kv" id="kDur">—</div>
+            <div class="kl">Total Dur.</div>
+          </div>
+          <div class="kpi-tile">
+            <div class="kv" id="kFiles">0</div>
+            <div class="kl">Files</div>
+          </div>
+          <div class="kpi-tile" style="border-color:#2a1a4a">
+            <div class="kv" id="kVO" style="color:#b87fff">0</div>
+            <div class="kl" style="color:#5a3a8a">VO Lines</div>
+          </div>
         </div>
-        <div class="kpi-tile">
-          <div class="kv" id="kDur">—</div>
-          <div class="kl">Total Dur.</div>
-        </div>
-        <div class="kpi-tile">
-          <div class="kv" id="kFiles">0</div>
-          <div class="kl">Files</div>
-        </div>
-        <div class="kpi-tile" style="border-color:#2a1a4a">
-          <div class="kv" id="kVO" style="color:#b87fff">0</div>
-          <div class="kl" style="color:#5a3a8a">VO Lines</div>
-        </div>
+        <div class="summary-note">Summary is now in its own sidebar column, so it stays visible even when the input and settings column gets taller on smaller viewport heights.</div>
       </div>
     </div>
-
-    <div class="statusbar" id="statusbar">Ready — paste content to begin</div>
   </aside>
 
   <!-- MAIN PANEL -->
@@ -881,32 +919,6 @@
 </div>
 
 
-<!-- Reel Start TC Modal -->
-<div id="reelModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;align-items:center;justify-content:center">
-  <div style="background:#0e1117;border:1px solid #1e2d45;border-radius:10px;padding:28px 32px;min-width:520px;max-width:640px;max-height:80vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.7)">
-    <div style="font-size:14px;font-weight:600;color:#c8d8f0;margin-bottom:8px">Source File Start Timecode</div>
-    <div style="font-size:11px;color:#4a6580;line-height:1.7;margin-bottom:6px;padding:10px 12px;background:#070c12;border:1px solid #1a2535;border-radius:6px">
-      <strong style="color:#8ab0d0">What to enter:</strong> the TC shown at the very first frame of the file in Premiere or your camera app — not your shot's in-point.<br>
-      <strong style="color:#8ab0d0">Leave blank</strong> if the file starts at <code style="background:#1a1535;color:#b87fff;padding:1px 4px;border-radius:3px">00:00:00:00</code> (no offset needed).<br>
-      <strong style="color:#8ab0d0">Common value:</strong> <code style="background:#1a1535;color:#b87fff;padding:1px 4px;border-radius:3px">01:00:00:00</code> for camera cards that start each reel at 1 hour.
-    </div>
-    <div style="font-size:10px;color:#2d4a62;margin-bottom:16px;padding:0 2px">Premiere subtracts this offset from each clip's source frame number so <code style="background:#1a1535;color:#6a8aaf;padding:1px 3px;border-radius:2px">&lt;in&gt;</code>/<code style="background:#1a1535;color:#6a8aaf;padding:1px 3px;border-radius:2px">&lt;out&gt;</code> land on the correct source TC after relinking.</div>
-    <table style="width:100%;border-collapse:collapse" id="reelTable">
-      <thead>
-        <tr>
-          <th style="text-align:left;font-size:10px;color:#2d4a62;padding:0 0 8px;font-weight:500;letter-spacing:.06em;font-family:var(--mono)">FILENAME</th>
-          <th style="text-align:left;font-size:10px;color:#2d4a62;padding:0 0 8px;font-weight:500;letter-spacing:.06em;font-family:var(--mono)">FILE START TC <span style="color:#1e3a52;font-weight:400">(blank = 00:00:00:00)</span></th>
-          <th style="text-align:left;font-size:10px;color:#2d4a62;padding:0 0 8px;font-weight:500;letter-spacing:.06em;font-family:var(--mono)">FIRST SHOT IN</th>
-        </tr>
-      </thead>
-      <tbody id="reelBody"></tbody>
-    </table>
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:24px">
-      <button id="reelCancel" style="padding:7px 18px;background:transparent;border:1px solid #1e2d45;border-radius:6px;color:#5a7090;font-size:12px;cursor:pointer">Cancel</button>
-      <button id="reelExport" style="padding:7px 18px;background:linear-gradient(135deg,#0a2a1a,#1a4a30);border:1px solid #2a7a44;border-radius:6px;color:#4de88a;font-size:12px;cursor:pointer;font-weight:600">Export XML</button>
-    </div>
-  </div>
-</div>
 
 <script>
 (() => {
@@ -1673,192 +1685,89 @@
     download(csv, (el.seqName.value || 'shotlist').replace(/[^\w-]+/g,'_') + '_shotlist.csv', 'text/csv');
   };
 
-  // ── Export XML (FCP7 / Premiere Pro) ────────────────────────────────────────
-  // Follows the exact FCP7 XML schema Premiere Pro expects for sequence import.
-  // Key rules:
-  //   - <file> full definition goes INSIDE the first clipitem that references it
-  //   - Subsequent clipitems referencing the same file use <file id="..."/> only
-  //   - <pathurl> must be file:// URI (or bare filename — Premiere will relink)
-  //   - <duration> on <file> must be set (use a large sentinel if unknown)
-  //   - No <!DOCTYPE> declaration — Premiere's parser rejects unknown DTDs
-  //   - <name> tag used for clips; <n> used for project/sequence/bin level
-  // Persist reel-start TCs across modal opens (filename → TC string)
-  const reelStartTCs = new Map();
-
+  // ── Export XML (FCP7 / Premiere Pro) ──────────────────────────────────────────
+  // Every clipitem gets its own unique <file> id and a full <file> block with
+  // <timecode> set to that shot's in-point TC and <in>0</in><out>durFrames</out>.
+  // This means Premiere resolves each clip's source frame independently via TC —
+  // no reel-start offset needed, works for any embedded TC in the source file.
+  // (Sharing a file id across clipitems with in=0 breaks because the id-ref clips
+  //  inherit no timecode and default to frame 0.)
   el.btnXML.onclick = () => {
     const activeShots = shots.filter(s => !s.struck);
     if (!activeShots.length) { el.errMsg.textContent = 'No active shots to export.'; return; }
 
-    // Collect unique filenames → build modal rows
-    // For each file, find the first shot's in-point TC as a reference hint.
-    const uniqueFiles = [...new Set(activeShots.map(s => s.filename))];
-    const firstShot   = new Map(); // filename → first shot object
-    activeShots.forEach(s => { if (!firstShot.has(s.filename)) firstShot.set(s.filename, s); });
-
-    const tbody = document.getElementById('reelBody');
-    tbody.innerHTML = uniqueFiles.map(fn => {
-      const saved    = reelStartTCs.get(fn) || '';  // blank = no offset
-      const firstIn  = firstShot.get(fn)?.inText || '';
-      return `<tr>
-        <td style="padding:7px 0;font-family:var(--mono);font-size:12px;color:#8ab0d0;padding-right:20px;white-space:nowrap">${fn}</td>
-        <td style="padding:7px 0;padding-right:20px">
-          <input data-file="${fn}" type="text" value="${saved}"
-            style="background:#070c12;border:1px solid #1e2d45;border-radius:5px;color:#c8d8f0;font-family:var(--mono);font-size:12px;padding:5px 9px;width:150px"
-            placeholder="00:00:00:00"/>
-        </td>
-        <td style="padding:7px 0;font-family:var(--mono);font-size:11px;color:#2d5a40">${firstIn}</td>
-      </tr>`;
-    }).join('');
-    const modal = document.getElementById('reelModal');
-    modal.style.display = 'flex';
-
-    document.getElementById('reelCancel').onclick = () => { modal.style.display = 'none'; };
-
-    document.getElementById('reelExport').onclick = () => {
-      // Save entered values
-      tbody.querySelectorAll('input[data-file]').forEach(inp => {
-        reelStartTCs.set(inp.dataset.file, inp.value.trim()); // blank = no offset
-      });
-      modal.style.display = 'none';
-      doExportXML(activeShots);
-    };
-  };
-
-  function doExportXML(activeShots) {
     const { timebase, ntsc } = getTimebaseInfo();
     const seqName  = el.seqName.value    || 'Shot List Export';
     const seqStart = el.seqStartTc.value || '00:00:00:00';
     const dfmt     = (ntsc === 'TRUE' && timebase === 30) ? 'DF' : 'NDF';
+    const rate     = () => `<rate><timebase>${timebase}</timebase><ntsc>${ntsc}</ntsc></rate>`;
 
-    // Parse reel-start TCs into frame offsets to subtract from in/out
-    const reelOffset = new Map(); // filename → frame offset
-    reelStartTCs.forEach((tcStr, fn) => {
-      const off = tcStr ? tcStrToFrames(tcStr) : 0;
-      reelOffset.set(fn, off);
-    });
-
-    // Inline helper — rate block used throughout
-    const rate = () => `<rate><timebase>${timebase}</timebase><ntsc>${ntsc}</ntsc></rate>`;
-
-    // Track which file ids have already been fully declared
-    const fileSeen  = new Set();
-    const fileIdMap = new Map(); // filename → xml id
-
-    activeShots.forEach(s => {
-      if (!fileIdMap.has(s.filename)) {
-        fileIdMap.set(s.filename, `file-${fileIdMap.size + 1}`);
-      }
-    });
-
-    // Build video clipitems — file definition is inlined on first use per filename.
-    // <in>/<out> are frame offsets from the file's own reel-start TC (i.e. inFrames - reelOffset).
-    // The <file><timecode> must declare that same reel-start so Premiere resolves
-    // frame 0 of the file to the correct display TC.
-    //
-    // When no reel offset is set (offset=0, TC=00:00:00:00): <in>/<out> equal the
-    // absolute frame numbers and the file timecode declares frame 0 = 00:00:00:00.
-    // Premiere then displays the correct source TC directly.
-
-    // Pre-compute per-file reel start TC string (needed for <file> timecode block)
-    const fileReelTC = new Map(); // filename → TC string for file timecode
-    activeShots.forEach(s => {
-      if (!fileReelTC.has(s.filename)) {
-        const off = reelOffset.get(s.filename) || 0;
-        fileReelTC.set(s.filename, off > 0 ? framesToTCString(off) : '00:00:00:00');
-      }
-    });
-
+    // Every shot gets its own file-N id with a full <file> block.
+    // <timecode> = this shot's in-point; <in>=0, <out>=durFrames.
+    // Premiere uses the declared TC to seek the right frame on relink.
     let tlV = 0;
     const videoItems = activeShots.map((s, i) => {
-      const tlIn = tlV, tlOut = tlV + s.durFrames;
-      tlV = tlOut;
-      const fid    = fileIdMap.get(s.filename);
-      const isNew  = !fileSeen.has(fid);
-      if (isNew) fileSeen.add(fid);
-      const offset = reelOffset.get(s.filename) || 0;
-      const clipIn  = s.inFrames  - offset;
-      const clipOut = s.outFrames - offset;
-      const reelTC  = fileReelTC.get(s.filename);
-
-      const fileBlock = isNew ? `
-                <file id="${fid}">
-                  <n>${xmlEsc(s.filename)}</n>
-                  ${rate()}
-                  <duration>86400</duration>
-                  <pathurl>${xmlEsc(s.filename)}</pathurl>
-                  <timecode>
-                    ${rate()}
-                    <string>${reelTC}</string>
-                    <frame>${offset}</frame>
-                    <displayformat>${dfmt}</displayformat>
-                  </timecode>
-                  <media>
-                    <video>
-                      <samplecharacteristics>
-                        ${rate()}
-                        <width>1920</width>
-                        <height>1080</height>
-                        <pixelaspectratio>square</pixelaspectratio>
-                        <fielddominance>none</fielddominance>
-                      </samplecharacteristics>
-                    </video>
-                    <audio>
-                      <channelcount>2</channelcount>
-                      <samplecharacteristics>
-                        <depth>16</depth>
-                        <samplerate>48000</samplerate>
-                      </samplecharacteristics>
-                    </audio>
-                  </media>
-                </file>` : `<file id="${fid}"/>`
-
+      const tlIn = tlV, tlOut = tlV + s.durFrames; tlV = tlOut;
+      const fid = `file-${i + 1}`;
       return `
-              <clipitem id="clipitem-${i + 1}">
-                <name>${xmlEsc(s.filename)}</name>
-                <enabled>TRUE</enabled>
-                <duration>${s.durFrames}</duration>
-                ${rate()}
-                <start>${tlIn}</start>
-                <end>${tlOut}</end>
-                <in>${clipIn}</in>
-                <out>${clipOut}</out>
-                ${fileBlock}
-                <sourcetrack>
-                  <mediatype>video</mediatype>
-                  <trackindex>1</trackindex>
-                </sourcetrack>
-              </clipitem>`;
-    }).join('\n');
-
-    // Two audio tracks (L=ch1, R=ch2) matching stereo source files.
-    // Premiere requires one track per channel with matching trackindex.
-    const buildAudioTrack = (chIdx) => {
-      let tlA = 0;
-      return activeShots.map((s, i) => {
-        const tlIn = tlA, tlOut = tlA + s.durFrames;
-        tlA = tlOut;
-        const fid = fileIdMap.get(s.filename);
-        return `
-              <clipitem id="a${chIdx}-${i + 1}">
+              <clipitem id="clipitem-${i+1}">
                 <n>${xmlEsc(s.filename)}</n>
                 <enabled>TRUE</enabled>
                 <duration>${s.durFrames}</duration>
                 ${rate()}
                 <start>${tlIn}</start>
                 <end>${tlOut}</end>
-                <in>${s.inFrames - (reelOffset.get(s.filename)||0)}</in>
-                <out>${s.outFrames - (reelOffset.get(s.filename)||0)}</out>
-                <file id="${fid}"/>
-                <sourcetrack>
-                  <mediatype>audio</mediatype>
-                  <trackindex>${chIdx}</trackindex>
-                </sourcetrack>
+                <in>0</in>
+                <out>${s.durFrames}</out>
+                <file id="${fid}">
+                  <n>${xmlEsc(s.filename)}</n>
+                  ${rate()}
+                  <duration>${s.durFrames}</duration>
+                  <pathurl>${xmlEsc(s.filename)}</pathurl>
+                  <timecode>
+                    ${rate()}
+                    <string>${s.inText}</string>
+                    <frame>${s.inFrames}</frame>
+                    <displayformat>${dfmt}</displayformat>
+                  </timecode>
+                  <media>
+                    <video><samplecharacteristics>
+                      ${rate()}
+                      <width>1920</width><height>1080</height>
+                      <pixelaspectratio>square</pixelaspectratio>
+                      <fielddominance>none</fielddominance>
+                    </samplecharacteristics></video>
+                    <audio>
+                      <channelcount>2</channelcount>
+                      <samplecharacteristics><depth>16</depth><samplerate>48000</samplerate></samplecharacteristics>
+                    </audio>
+                  </media>
+                </file>
+                <sourcetrack><mediatype>video</mediatype><trackindex>1</trackindex></sourcetrack>
+              </clipitem>`;
+    }).join('\n');
+
+    const buildAudioTrack = (chIdx) => {
+      let tlA = 0;
+      return activeShots.map((s, i) => {
+        const tlIn = tlA, tlOut = tlA + s.durFrames; tlA = tlOut;
+        return `
+              <clipitem id="a${chIdx}-${i+1}">
+                <n>${xmlEsc(s.filename)}</n>
+                <enabled>TRUE</enabled>
+                <duration>${s.durFrames}</duration>
+                ${rate()}
+                <start>${tlIn}</start>
+                <end>${tlOut}</end>
+                <in>0</in>
+                <out>${s.durFrames}</out>
+                <file id="file-${i+1}"/>
+                <sourcetrack><mediatype>audio</mediatype><trackindex>${chIdx}</trackindex></sourcetrack>
               </clipitem>`;
       }).join('\n');
     };
 
     const seqDur = tlV || 1;
-
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <xmeml version="5">
   <project>
@@ -1876,38 +1785,27 @@
         </timecode>
         <media>
           <video>
-            <format>
-              <samplecharacteristics>
-                ${rate()}
-                <width>1920</width>
-                <height>1080</height>
-                <pixelaspectratio>square</pixelaspectratio>
-                <fielddominance>none</fielddominance>
-              </samplecharacteristics>
-            </format>
+            <format><samplecharacteristics>
+              ${rate()}
+              <width>1920</width><height>1080</height>
+              <pixelaspectratio>square</pixelaspectratio>
+              <fielddominance>none</fielddominance>
+            </samplecharacteristics></format>
             <track>
-              <enabled>TRUE</enabled>
-              <locked>FALSE</locked>
+              <enabled>TRUE</enabled><locked>FALSE</locked>
               ${videoItems}
             </track>
           </video>
           <audio>
             <numOutputChannels>2</numOutputChannels>
-            <format>
-              <samplecharacteristics>
-                <depth>16</depth>
-                <samplerate>48000</samplerate>
-              </samplecharacteristics>
-            </format>
+            <format><samplecharacteristics><depth>16</depth><samplerate>48000</samplerate></samplecharacteristics></format>
             <track>
-              <enabled>TRUE</enabled>
-              <locked>FALSE</locked>
+              <enabled>TRUE</enabled><locked>FALSE</locked>
               <outputchannelindex>1</outputchannelindex>
               ${buildAudioTrack(1)}
             </track>
             <track>
-              <enabled>TRUE</enabled>
-              <locked>FALSE</locked>
+              <enabled>TRUE</enabled><locked>FALSE</locked>
               <outputchannelindex>2</outputchannelindex>
               ${buildAudioTrack(2)}
             </track>
@@ -1918,29 +1816,13 @@
   </project>
 </xmeml>`;
 
-    download(xml, seqName.replace(/[^\w-]+/g, '_') + '_sequence.xml', 'application/xml');
+    download(xml, seqName.replace(/[^\w-]+/g,'_') + '_sequence.xml', 'application/xml');
     el.errMsg.textContent = '';
     el.statusbar.textContent = `✓ Exported ${activeShots.length}-clip sequence — File → Import in Premiere Pro, then relink media`;
     setTimeout(() => el.statusbar.textContent = `Shots: ${activeShots.length}`, 6000);
-  }
+  };
 
-  // Parse a TC string (HH:MM:SS:FF or HH;MM;SS;FF) to frame count using current fps settings
-  function tcStrToFrames(str) {
-    const clean = (str || '').trim().replace(/;/g, ':');
-    const m = clean.match(/^(\d{1,2}):(\d{2}):(\d{2}):(\d{2})$/);
-    if (!m) return 0;
-    const [, h, mn, s, f] = m.map(Number);
-    const { timebase, ntsc } = getTimebaseInfo();
-    if (ntsc === 'TRUE' && (timebase === 30 || timebase === 60)) {
-      const df = Math.round(timebase * 0.066666);
-      const totalMins = 60 * h + mn;
-      return timebase*3600*h + timebase*60*mn + timebase*s + f
-           - df * (totalMins - Math.floor(totalMins / 10));
-    }
-    return (h*3600 + mn*60 + s) * timebase + f;
-  }
-
-  // ── Tabs ─────────────────────────────────────────────────────────────────────
+      // ── Tabs ─────────────────────────────────────────────────────────────────────
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
